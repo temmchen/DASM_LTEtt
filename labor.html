@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Virtuelles Labor — KI Labor DASM</title>
+<style>
+/* =====================================================================
+   KI Labor DASM — Gemeinsames Stylesheet
+   Designsprache:  "Kupfer & Phosphor"
+   Helle Protokollseiten in kühlem Papier mit Kupfer-Akzent (Wicklung),
+   tiefschwarze Instrumenten-Panels mit leuchtenden Anzeigen.
+   ===================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+/* ---- Design-Token ------------------------------------------------- */
+:root{
+  /* Papier / Flächen */
+  --papier:    #eef1f6;   /* Seitenhintergrund, kühl */
+  --papier-2:  #e4e9f0;   /* abgesetzte Zonen */
+  --karte:     #ffffff;
+  --tinte:     #121a26;   /* Haupttext / Struktur (statt generischem Blau) */
+  --tinte-2:   #2a3442;
+  --stahl:     #586675;   /* Sekundärtext */
+  --stahl-2:   #8794a3;
+  --gitter:    #d7dde6;   /* Linien */
+  --gitter-2:  #e8ecf2;
+
+  /* Kupfer — Signaturfarbe (Motorwicklung) */
+  --kupfer:    #c06a37;
+  --kupfer-d:  #9c5328;
+  --kupfer-l:  #f7e9df;
+  --kupfer-gl: #e08a4d;
+
+  /* Spannungs-Blau — sparsam (Auswahl, Info, Links) */
+  --spannung:  #2a52e0;
+  --spannung-d:#1c3bb0;
+  --spannung-l:#e9edfc;
+
+  /* Status */
+  --warnung:   #cf5a2c;   /* Kipppunkt / Abzug (Kupfer-Familie) */
+  --warnung-l: #fbe7dd;
+  --messwert:  #1f8f4e;   /* korrekt / gut */
+  --messwert-l:#e3f3ea;
+  --violett:   #7c3aed;
+
+  /* Instrumenten-Panel (dunkel, anodisiert) */
+  --panel:     #0e141c;
+  --panel-2:   #161f29;
+  --panel-3:   #1d2833;
+  --panel-rand:#28333f;
+  --readout:   #38d6ff;   /* Phosphor-Cyan */
+  --readout-am:#ffb43c;   /* Bernstein */
+  --readout-gn:#46e487;   /* Grün */
+
+  --radius:    16px;
+  --radius-s:  10px;
+  --schatten-s:0 1px 2px rgba(18,26,38,.06), 0 1px 3px rgba(18,26,38,.04);
+  --schatten:  0 1px 2px rgba(18,26,38,.05), 0 6px 16px rgba(18,26,38,.07);
+  --schatten-m:0 2px 4px rgba(18,26,38,.06), 0 16px 40px rgba(18,26,38,.12);
+  --schatten-panel:0 1px 0 rgba(255,255,255,.04) inset, 0 18px 40px rgba(8,12,18,.45);
+  --maxw:      1180px;
+}
+
+/* ---- Reset / Basis ------------------------------------------------ */
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  background:var(--papier);
+  color:var(--tinte);
+  line-height:1.65;
+  font-size:16px;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  background-image:
+    radial-gradient(1200px 600px at 78% -8%, rgba(192,106,55,.06), transparent 60%),
+    radial-gradient(1000px 520px at 0% 0%, rgba(42,82,224,.05), transparent 55%);
+  background-attachment:fixed;
+}
+h1,h2,h3,h4{font-family:'Archivo',sans-serif;line-height:1.1;letter-spacing:-.015em;color:var(--tinte);font-weight:800}
+p{text-wrap:pretty}
+a{color:var(--spannung);text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:2px}
+.mono{font-family:'JetBrains Mono',monospace}
+strong,b{font-weight:700}
+:focus-visible{outline:2.5px solid var(--kupfer);outline-offset:2px;border-radius:4px}
+img{max-width:100%}
+
+/* ---- Kopfzeile / Navigation -------------------------------------- */
+.kopf{
+  position:sticky;top:0;z-index:50;
+  background:rgba(238,241,246,.82);
+  backdrop-filter:saturate(150%) blur(12px);
+  -webkit-backdrop-filter:saturate(150%) blur(12px);
+  border-bottom:1px solid var(--gitter);
+}
+.kopf-inner{
+  max-width:var(--maxw);margin:0 auto;padding:.75rem 1.5rem;
+  display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;
+}
+.logo{display:flex;align-items:center;gap:.75rem;font-family:'Archivo';font-weight:800;
+  font-size:1.06rem;letter-spacing:-.02em;color:var(--tinte)}
+.logo:hover{text-decoration:none}
+.logo .mark{
+  width:38px;height:38px;border-radius:10px;background:var(--panel);
+  display:grid;place-items:center;flex:none;position:relative;overflow:hidden;
+  box-shadow:0 2px 8px rgba(8,12,18,.35), 0 0 0 1px var(--panel-rand) inset;
+}
+.logo .mark::before{content:"";position:absolute;inset:0;
+  background:conic-gradient(from 0deg, transparent 0 270deg, var(--readout) 330deg, transparent 360deg);
+  animation:spin 3.2s linear infinite}
+.logo .mark::after{content:"";width:15px;height:15px;border-radius:50%;
+  background:var(--panel);border:2.5px solid var(--readout);z-index:1;
+  box-shadow:0 0 10px rgba(56,214,255,.5)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.logo small{display:block;font-family:'JetBrains Mono';font-weight:500;font-size:.6rem;
+  letter-spacing:.18em;color:var(--stahl);margin-top:2px}
+.nav{display:flex;gap:.25rem;margin-left:auto;flex-wrap:wrap}
+.nav a{
+  font-family:'JetBrains Mono';font-size:.78rem;font-weight:500;letter-spacing:.01em;
+  color:var(--stahl);padding:.5rem .8rem;border-radius:9px;white-space:nowrap;transition:.15s}
+.nav a:hover{background:var(--karte);color:var(--tinte);text-decoration:none;box-shadow:var(--schatten-s)}
+.nav a.aktiv{background:var(--tinte);color:#fff}
+.nav a.aktiv:hover{background:var(--tinte-2)}
+
+/* ---- Layout-Container -------------------------------------------- */
+.wrap{max-width:var(--maxw);margin:0 auto;padding:2.6rem 1.5rem 5rem}
+.eyebrow{
+  font-family:'JetBrains Mono';font-size:.72rem;font-weight:600;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--kupfer-d);margin-bottom:1rem;
+  display:flex;align-items:center;gap:.7rem}
+.eyebrow::before{content:"";width:28px;height:2px;background:var(--kupfer);border-radius:2px}
+
+/* ---- Karten ------------------------------------------------------- */
+.karte{
+  background:var(--karte);border:1px solid var(--gitter);border-radius:var(--radius);
+  box-shadow:var(--schatten-s);padding:1.7rem 1.8rem;margin-bottom:1.3rem;
+}
+.karte h2{font-size:1.5rem;margin-bottom:.6rem}
+.karte h3{font-size:1.15rem;margin:1.1rem 0 .5rem;font-weight:700}
+.karte h3:first-child{margin-top:0}
+.karte p{margin-bottom:.85rem;color:var(--tinte-2)}
+.karte p:last-child{margin-bottom:0}
+
+.raster-2{display:grid;grid-template-columns:1fr 1fr;gap:1.3rem}
+.raster-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+@media(max-width:820px){.raster-2,.raster-3{grid-template-columns:1fr}}
+
+/* ---- Buttons ------------------------------------------------------ */
+.btn{
+  display:inline-flex;align-items:center;gap:.55rem;font-family:'Archivo';font-weight:700;
+  font-size:.95rem;padding:.8rem 1.45rem;border-radius:11px;border:1px solid transparent;
+  cursor:pointer;background:var(--tinte);color:#fff;transition:.16s;letter-spacing:.005em;
+  box-shadow:0 1px 2px rgba(18,26,38,.18), 0 4px 14px rgba(18,26,38,.14);
+  position:relative;overflow:hidden;
+}
+.btn::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;
+  background:linear-gradient(90deg,var(--kupfer),var(--kupfer-gl));opacity:0;transition:.16s}
+.btn:hover{background:var(--tinte-2);text-decoration:none;transform:translateY(-1px);
+  box-shadow:0 2px 4px rgba(18,26,38,.2), 0 10px 24px rgba(18,26,38,.2)}
+.btn:hover::after{opacity:1}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn:disabled::after{opacity:0}
+.btn.sekundaer{background:var(--karte);color:var(--tinte);border-color:var(--gitter);
+  box-shadow:var(--schatten-s)}
+.btn.sekundaer:hover{background:var(--karte);border-color:var(--kupfer);color:var(--kupfer-d)}
+.btn.sekundaer::after{display:none}
+.btn.gross{font-size:1.05rem;padding:.98rem 1.9rem}
+.btn.gefahr{background:var(--warnung)}
+.btn.gefahr:hover{background:var(--warnung-l);color:var(--warnung)}
+.btn.erfolg{background:var(--messwert)}
+.btn.erfolg:hover{background:#19743f}
+
+/* ---- Marker / Badges --------------------------------------------- */
+.badge{
+  display:inline-flex;align-items:center;gap:.4rem;font-family:'JetBrains Mono';
+  font-size:.72rem;font-weight:600;padding:.3rem .65rem;border-radius:7px;letter-spacing:.03em;
+  border:1px solid transparent}
+.badge.blau{background:var(--spannung-l);color:var(--spannung-d);border-color:#cfd9fb}
+.badge.orange{background:var(--kupfer-l);color:var(--kupfer-d);border-color:#eccdb6}
+.badge.gruen{background:var(--messwert-l);color:var(--messwert);border-color:#c2e6cf}
+.badge.grau{background:var(--gitter-2);color:var(--stahl);border-color:var(--gitter)}
+
+/* ---- Formelboxen -------------------------------------------------- */
+.formel{
+  background:linear-gradient(180deg,var(--panel-2),var(--panel));color:#e9eef3;
+  border-radius:var(--radius-s);padding:1.15rem 1.35rem;margin:1.1rem 0;
+  font-family:'JetBrains Mono';font-size:1.02rem;border:1px solid var(--panel-rand);
+  border-left:3px solid var(--readout);overflow-x:auto;box-shadow:var(--schatten-s)}
+.formel .hl{color:var(--readout)}
+.formel .am{color:var(--readout-am)}
+.formel small{display:block;color:var(--stahl-2);font-size:.78rem;margin-top:.55rem;
+  font-family:'Inter';line-height:1.55}
+
+/* ---- Hinweisboxen ------------------------------------------------- */
+.box{border-radius:var(--radius-s);padding:1rem 1.2rem;margin:1.1rem 0;border:1px solid;
+  font-size:.93rem;display:flex;gap:.85rem;align-items:flex-start;line-height:1.55}
+.box .ic{font-size:1.2rem;flex:none;line-height:1.4}
+.box.info{background:var(--spannung-l);border-color:#cfd9fb;color:#1a368f}
+.box.warn{background:var(--warnung-l);border-color:#f0cbb8;color:#8c3618}
+.box.gut{background:var(--messwert-l);border-color:#bfe3cd;color:#155f33}
+.box strong{font-weight:700}
+
+/* ---- Tabellen ----------------------------------------------------- */
+table.tab{width:100%;border-collapse:collapse;font-size:.9rem;margin:.6rem 0;
+  border-radius:var(--radius-s);overflow:hidden;box-shadow:var(--schatten-s)}
+table.tab th{
+  background:var(--panel);color:#e3e9ef;font-family:'JetBrains Mono';font-weight:600;
+  font-size:.74rem;letter-spacing:.03em;padding:.65rem .75rem;text-align:left;
+  border-bottom:1px solid var(--panel-rand)}
+table.tab td{padding:.6rem .75rem;border-bottom:1px solid var(--gitter-2);
+  font-family:'JetBrains Mono';font-size:.86rem;background:var(--karte);color:var(--tinte-2)}
+table.tab tr:last-child td{border-bottom:none}
+table.tab tr:nth-child(even) td{background:#f7f9fb}
+table.tab td.txt{font-family:'Inter'}
+
+/* ---- Schritt-Liste (nummeriert) ---------------------------------- */
+.schritte{counter-reset:s;list-style:none;margin:1.1rem 0}
+.schritte li{position:relative;padding:0 0 1.4rem 3.4rem;counter-increment:s}
+.schritte li::before{
+  content:counter(s,decimal-leading-zero);position:absolute;left:0;top:-2px;
+  font-family:'JetBrains Mono';font-weight:700;font-size:.82rem;color:var(--kupfer-d);
+  background:var(--kupfer-l);border:1px solid #eccdb6;width:2.2rem;height:2.2rem;border-radius:10px;
+  display:grid;place-items:center}
+.schritte li::after{content:"";position:absolute;left:1.1rem;top:2.2rem;bottom:.2rem;
+  width:2px;background:var(--gitter)}
+.schritte li:last-child::after{display:none}
+.schritte li strong{display:block;font-family:'Archivo';font-weight:700;
+  font-size:1.04rem;margin-bottom:.2rem;color:var(--tinte)}
+.schritte li .txt{color:var(--tinte-2);font-size:.93rem}
+
+/* ---- Kennzahl-Kacheln (Instrument) ------------------------------- */
+.kpi{background:linear-gradient(180deg,var(--panel-2),var(--panel));
+  border:1px solid var(--panel-rand);border-radius:var(--radius-s);
+  padding:1.05rem 1.15rem;color:#dfe6ec;box-shadow:var(--schatten-s);position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--readout),transparent);opacity:.5}
+.kpi .lab{font-family:'JetBrains Mono';font-size:.68rem;letter-spacing:.09em;color:var(--stahl-2);
+  text-transform:uppercase}
+.kpi .val{font-family:'JetBrains Mono';font-weight:700;font-size:1.6rem;color:var(--readout);
+  margin-top:.3rem;line-height:1;text-shadow:0 0 18px rgba(56,214,255,.25)}
+.kpi .val small{font-size:.85rem;color:var(--stahl-2);font-weight:500}
+
+/* ---- Bilder ------------------------------------------------------- */
+figure.bild{margin:1.3rem 0;border:1px solid var(--gitter);border-radius:var(--radius-s);
+  overflow:hidden;background:var(--karte);box-shadow:var(--schatten-s)}
+figure.bild img{width:100%;display:block}
+figure.bild figcaption{font-family:'JetBrains Mono';font-size:.78rem;color:var(--stahl);
+  padding:.65rem .95rem;border-top:1px solid var(--gitter);background:#f7f9fb}
+
+/* ---- Fortschrittsbalken ------------------------------------------ */
+.progress{height:9px;background:var(--gitter-2);border-radius:99px;overflow:hidden;margin:.5rem 0}
+.progress > div{height:100%;background:linear-gradient(90deg,var(--kupfer),var(--kupfer-gl));
+  border-radius:99px;transition:width .35s ease}
+
+/* ---- Fuss --------------------------------------------------------- */
+.fuss{border-top:1px solid var(--gitter);background:var(--karte);margin-top:3.5rem}
+.fuss-inner{max-width:var(--maxw);margin:0 auto;padding:2.2rem 1.5rem;
+  display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+  font-family:'JetBrains Mono';font-size:.78rem;color:var(--stahl)}
+
+/* ---- Utility ------------------------------------------------------ */
+.zentriert{text-align:center}
+.btn-reihe{display:flex;gap:.85rem;flex-wrap:wrap;margin-top:1.3rem}
+.trenner{height:1px;background:var(--gitter);margin:1.5rem 0;border:none}
+.versteckt{display:none!important}
+.mt0{margin-top:0}.mb0{margin-bottom:0}
+
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+
+</style>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2310161d'/><circle cx='16' cy='16' r='7' fill='none' stroke='%2336d3ff' stroke-width='3'/></svg>">
+</head>
+<body>
+
+<header class="kopf">
+  <div class="kopf-inner">
+    <a href="index.html" class="logo">
+      <span class="mark"></span>
+      <span>KI&nbsp;Labor&nbsp;DASM<small>DREHSTROM-ASYNCHRONMASCHINE</small></span>
+    </a>
+    <nav class="nav">
+      <a href="index.html">Start</a>
+      <a href="theorie.html">Theorie</a>
+      <a href="antestat.html">Antestat</a>
+      <a href="labor.html" class="aktiv">Virtuelles Labor</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ============ START-GATE ============ -->
+  <div id="labStartBox">
+    <div class="eyebrow">Phase 03 · Versuchsdurchführung</div>
+    <h1 style="font-size:clamp(2rem,4vw,2.7rem);font-weight:900;margin-bottom:.7rem">Virtuelles Drehstrom-Asynchronlabor</h1>
+    <p style="font-size:1.06rem;color:#27313b;max-width:62ch;margin-bottom:1.4rem">
+    Am virtuellen Prüfstand nimmst du die <strong>Belastungskennlinie</strong> auf, bestimmst das
+    <strong>Kippmoment</strong> und berechnest aus den Messwerten <strong>Schlupf</strong> und
+    <strong>Wirkungsgrad</strong>. Der Prüfstand bewertet deine Bedienung in Echtzeit —
+    Fehlbedienung kostet Punkte.</p>
+
+    <div class="box warn"><span class="ic">⚠️</span>
+    <div><strong>Punktabzug droht bei:</strong> Belasten der Bremse, bevor die Maschine läuft ·
+    Anlauf unter zu hoher Last · mehrfaches oder unkontrolliertes Kippen · zu langes Verharren
+    im Kippzustand (Motorschutz löst aus). Eine saubere, vollständige Messreihe gibt die volle
+    Punktzahl von 100.</div></div>
+
+    <div id="labFreiHinweis" class="box gut versteckt" style="margin-top:1rem">
+      <span class="ic">✓</span><div></div></div>
+
+    <div class="karte">
+      <h2 style="font-size:1.3rem;margin-bottom:1rem">Prüfstand betreten</h2>
+      <div class="form-grid">
+        <div class="feld">
+          <label for="labName">Vor- und Nachname</label>
+          <input type="text" id="labName" placeholder="z. B. Alex Muller" autocomplete="off">
+        </div>
+        <div class="feld">
+          <label for="labKlasse">Klasse</label>
+          <input type="text" id="labKlasse" placeholder="z. B. T3EL" autocomplete="off">
+        </div>
+      </div>
+      <div id="labStartFehler" class="box warn versteckt" style="margin-top:1rem">
+        <span class="ic">⚠️</span><div>Bitte Name und Klasse eintragen.</div>
+      </div>
+      <div class="btn-reihe">
+        <button class="btn gross" onclick="laborStarten()">Prüfstand betreten →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ZUGANGS-SPERRE ============ -->
+  <div id="labGate" class="versteckt">
+    <div class="eyebrow">Phase 03 · Zugang</div>
+    <h1 style="font-size:clamp(2rem,4vw,2.7rem);font-weight:900;margin-bottom:.7rem">Versuch gesperrt 🔒</h1>
+    <div class="box warn"><span class="ic">🔒</span><div id="gateMsg">
+      Bestehe zuerst den <a href="antestat.html">Antestat</a> (mindestens 60 %), um den Versuch zu starten.</div></div>
+    <div class="karte" style="margin-top:1rem">
+      <h2 style="font-size:1.2rem;margin-bottom:.4rem">Lehrer-Zugang</h2>
+      <p style="color:#27313b;margin-bottom:1rem">Mit dem Lehrer-Passwort lässt sich der Versuch direkt öffnen
+        — ohne Antestat und mit vollem Punktestand.</p>
+      <div class="feld">
+        <label for="gatePass">Passwort</label>
+        <input type="password" id="gatePass" autocomplete="off"
+               onkeydown="if(event.key==='Enter'){lehrerEntsperren();}">
+      </div>
+      <div id="gatePassFehler" class="box warn versteckt" style="margin-top:.6rem">
+        <span class="ic">⚠️</span><div>Falsches Passwort.</div></div>
+      <div class="btn-reihe" style="margin-top:1rem">
+        <button class="btn" onclick="lehrerEntsperren()">Entsperren →</button>
+        <a href="antestat.html" class="btn sekundaer">Zum Antestat</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ LABOR ============ -->
+  <div id="laborBox" class="versteckt">
+
+    <!-- Versuchsanleitung -->
+    <details class="karte anleitung" open>
+      <summary><span class="eyebrow" style="margin:0">Versuchsanleitung — so gehst du vor</span></summary>
+      <ol class="schritte" style="margin-top:1.2rem">
+        <li><strong>Maschine einschalten.</strong><span class="txt">Die Bremse muss gelöst sein
+          (M = 0 Nm). Drücke <em>Netz EIN</em> und warte, bis die Drehzahl hochgelaufen ist und
+          sich stabilisiert.</span></li>
+        <li><strong>Leerlaufpunkt messen.</strong><span class="txt">Nimm direkt im Leerlauf
+          (M ≈ 0) den ersten Messpunkt auf.</span></li>
+        <li><strong>Schrittweise belasten.</strong><span class="txt">Erhöhe die Bremse in kleinen
+          Schritten (etwa 2 Nm). Warte jedes Mal, bis die Drehzahl steht, dann
+          <em>Messpunkt aufnehmen</em>.</span></li>
+        <li><strong>Kipppunkt finden.</strong><span class="txt">Steigere die Last vorsichtig weiter.
+          Das <em>höchste</em> erreichbare Moment ist das Kippmoment. Überschreitest du es, kippt die
+          Maschine — das ist hier zum Auffinden von M<sub>K</sub> vorgesehen.</span></li>
+        <li><strong>Nach dem Kippen Last lösen.</strong><span class="txt">Drehe die Bremse zurück,
+          dann fängt sich die Maschine wieder. Lass sie nicht zu lange im Kippzustand stehen.</span></li>
+        <li><strong>Messreihe vervollständigen.</strong><span class="txt">Verteile mindestens
+          8–10 Punkte über den ganzen Bereich vom Leerlauf bis zum Kipppunkt.</span></li>
+        <li><strong>Auswerten & abgeben.</strong><span class="txt">Öffne die <em>Auswertung</em>,
+          prüfe Kennlinie und Kennwerte und lade das <em>Messprotokoll als PDF</em> herunter.</span></li>
+      </ol>
+    </details>
+
+    <!-- ===== PRÜFSTAND-DECK ===== -->
+    <div class="deck">
+      <div class="deck-kopf">
+        <span class="deck-titel">PRÜFSTAND · 3~ ASYNCHRONMOTOR 1,5 kW</span>
+        <div class="deck-punkte">
+          <span class="dp-lab">PRÜFSTAND-PUNKTE</span>
+          <span class="dp-val" id="punkteVal">100</span>
+        </div>
+      </div>
+
+      <div class="deck-grid">
+        <!-- Maschine + Status -->
+        <div class="deck-machine">
+          <canvas id="maschineCanvas" width="300" height="300"></canvas>
+          <div id="statusWrap" class="status-wrap st-off">
+            <span class="status-dot"></span>
+            <span id="statusLampe">AUSGESCHALTET</span>
+          </div>
+        </div>
+
+        <!-- Instrumente -->
+        <div class="instr-grid">
+          <div class="instr"><span class="i-lab">DREHZAHL n</span><span class="i-val" id="iv_n">0</span><span class="i-unit">1/min</span></div>
+          <div class="instr"><span class="i-lab">WELLENMOMENT M</span><span class="i-val am" id="iv_M">0</span><span class="i-unit">Nm</span></div>
+          <div class="instr"><span class="i-lab">SCHLUPF s</span><span class="i-val" id="iv_s">0</span><span class="i-unit">%</span></div>
+          <div class="instr"><span class="i-lab">STRANGSPANNUNG U</span><span class="i-val" id="iv_U">0</span><span class="i-unit">V</span></div>
+          <div class="instr"><span class="i-lab">STROM I</span><span class="i-val" id="iv_I">0</span><span class="i-unit">A</span></div>
+          <div class="instr"><span class="i-lab">cos φ</span><span class="i-val" id="iv_cos">0</span><span class="i-unit">–</span></div>
+          <div class="instr"><span class="i-lab">P aufgenommen</span><span class="i-val" id="iv_Pzu">0</span><span class="i-unit">W</span></div>
+          <div class="instr"><span class="i-lab">P abgegeben</span><span class="i-val" id="iv_Pab">0</span><span class="i-unit">W</span></div>
+          <div class="instr"><span class="i-lab">WIRKUNGSGRAD η</span><span class="i-val gn" id="iv_eta">0</span><span class="i-unit">%</span></div>
+        </div>
+      </div>
+
+      <!-- Bedienung -->
+      <div class="deck-controls">
+        <div class="ctrl-buttons">
+          <button id="btnEin" class="dbtn ein" onclick="maschineEin()">⏻ Netz EIN</button>
+          <button id="btnAus" class="dbtn aus" onclick="maschineAus()" disabled>⭘ Netz AUS</button>
+          <button id="btnReset" class="dbtn reset" onclick="motorschutzReset()" disabled>↺ Motorschutz Reset</button>
+        </div>
+        <div class="ctrl-bremse">
+          <div class="cb-head"><span>BREMSE / BELASTUNGSMOMENT</span><span class="mono" id="bremseVal">0,0 Nm</span></div>
+          <input type="range" id="bremseSlider" min="0" max="27" value="0" step="0.5"
+                 oninput="bremseGesetzt(this.value)">
+          <div class="cb-scale"><span>0 (Leerlauf)</span><span>Kipppunkt ≈ 24 Nm</span></div>
+        </div>
+        <button id="btnMess" class="btn erfolg gross" onclick="messpunktAufnehmen()">📍 Messpunkt aufnehmen</button>
+      </div>
+
+      <div class="deck-foot">
+        <span>Höchstes Moment bisher: <b id="hoechstMoment">0,0 Nm</b></span>
+        <span>Messpunkte: <b id="messAnzahl">0</b></span>
+      </div>
+    </div>
+
+    <!-- ===== MOTORSCHUTZ-INFO ===== -->
+    <div class="box info" style="margin-top:1.3rem">
+      <span class="ic">🛡️</span>
+      <div>
+        <strong>Motorschutz — so löst er nicht aus.</strong>
+        Der Motorschutzschalter schützt vor <em>Überstrom</em>. Im stabilen Betrieb steigt der Strom mit der
+        Last; am Kipppunkt ist er am größten. Bleibe darunter:
+        <ul style="margin:.5rem 0 .35rem 1.1rem">
+          <li>maximales Moment = Kippmoment <b>M<sub>max</sub> = M<sub>K</sub> ≈ 24,3 Nm</b>,
+              zugehöriger Strom <b>I<sub>max</sub> ≈ 10,0 A</b> (≈ 3·I<sub>N</sub>).</li>
+          <li>belastest du über M<sub>K</sub> hinaus, <b>kippt</b> die Maschine, der Strom springt Richtung
+              Stillstandsstrom <b>≈ 14,3 A</b> (≈ 4,5·I<sub>N</sub>) und der Motorschutz löst nach ≈ 4 s aus
+              (<b>−15 Punkte</b>).</li>
+        </ul>
+        <span class="mono" style="font-size:.84rem">Selbst nachrechnen: P<sub>ab</sub> = M·2π·n/60,&nbsp;
+        P<sub>zu</sub> = √3·U·I·cos&nbsp;φ &nbsp;·&nbsp; Nennwerte: I<sub>N</sub> = 3,2 A, M<sub>N</sub> ≈ 10,1 Nm.</span>
+      </div>
+    </div>
+
+    <!-- ===== CHART + LOG ===== -->
+    <div class="raster-2" style="margin-top:1.3rem;align-items:start">
+      <div class="karte">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem">
+          <h3 style="margin:0">Kennlinie M = f(n)</h3>
+          <button id="btnTheorie" class="btn sekundaer" style="padding:.45rem .9rem;font-size:.82rem"
+                  onclick="theoretischeKurveZeigen()">Theoriekurve einblenden</button>
+        </div>
+        <div class="chart-box"><canvas id="chartKennlinie"></canvas></div>
+        <p style="font-size:.8rem;color:var(--stahl);font-family:'JetBrains Mono';margin-top:.5rem">
+          Der orange Marker ist dein aktueller Arbeitspunkt. Aufgenommene Punkte werden blau verbunden.</p>
+      </div>
+
+      <div class="karte" style="display:flex;flex-direction:column;max-height:520px">
+        <h3 style="margin:0 0 .6rem">Ereignisprotokoll</h3>
+        <div id="ereignisLog" class="ev-log"></div>
+      </div>
+    </div>
+
+    <!-- ===== MESSTABELLE ===== -->
+    <div class="karte" style="margin-top:1.3rem">
+      <h3 style="margin:0 0 .8rem">Messwerttabelle</h3>
+      <div style="overflow-x:auto">
+        <table class="tab messtab">
+          <thead><tr>
+            <th>Nr</th><th>U / V</th><th>I / A</th><th>n / 1/min</th><th>s / %</th>
+            <th>M / Nm</th><th>P<sub>zu</sub> / W</th><th>P<sub>ab</sub> / W</th><th>η / %</th>
+          </tr></thead>
+          <tbody id="messTabelle">
+            <tr><td colspan="9" class="txt" style="text-align:center;color:var(--stahl)">
+              Noch keine Messpunkte – Maschine belasten und „Messpunkt aufnehmen".</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="btn-reihe" style="margin-top:1.2rem">
+        <button class="btn" onclick="auswertungAnzeigen()">Auswertung anzeigen ↓</button>
+        <button class="btn sekundaer" onclick="laborPdf()">📄 Messprotokoll als PDF</button>
+      </div>
+    </div>
+
+    <!-- ===== AUSWERTUNG ===== -->
+    <div id="auswertung" class="versteckt" style="scroll-margin-top:80px">
+      <div class="eyebrow" style="margin-top:2rem">Phase 04 · Auswertung</div>
+      <h2 style="font-size:1.7rem;font-weight:900;margin-bottom:1rem">Ergebnisse deiner Messreihe</h2>
+
+      <div class="raster-3" style="gap:1rem">
+        <div class="kpi"><span class="lab">Synchrone Drehzahl</span><span class="val" id="a_ns">–</span></div>
+        <div class="kpi"><span class="lab">Kippmoment (gemessen)</span><span class="val" id="a_MK">–</span></div>
+        <div class="kpi"><span class="lab">Kippdrehzahl n_K</span><span class="val" id="a_nK">–</span></div>
+        <div class="kpi"><span class="lab">Kippschlupf s_K</span><span class="val" id="a_sK">–</span></div>
+        <div class="kpi"><span class="lab">Bester Wirkungsgrad</span><span class="val" id="a_etaMax">–</span></div>
+        <div class="kpi"><span class="lab">bei Leistung</span><span class="val" id="a_etaP">–</span></div>
+      </div>
+
+      <div class="karte" style="margin-top:1.2rem">
+        <h3 style="margin-top:0">Vergleich Messung ↔ Theorie</h3>
+        <table class="tab" style="max-width:520px">
+          <tr><th></th><th>gemessen</th><th>berechnet</th></tr>
+          <tr><td class="txt">Kippmoment M<sub>K</sub></td><td id="a_MK2"><span id="a_MKm">–</span></td><td id="a_MKtheo">–</td></tr>
+          <tr><td class="txt">Kippschlupf s<sub>K</sub></td><td id="a_sKm">–</td><td id="a_sKtheo">–</td></tr>
+        </table>
+        <p id="a_vergleich" style="font-size:.92rem;color:#3a4651;margin-top:.8rem"></p>
+      </div>
+
+      <div class="box gut"><span class="ic">🏁</span>
+      <div>Dein Prüfstand-Ergebnis: <strong style="font-size:1.1rem" id="a_punkte">– / 100</strong>.
+      Lade jetzt dein Messprotokoll herunter und sende es an deine Lehrkraft.</div></div>
+
+      <div class="btn-reihe">
+        <button class="btn gross" onclick="laborPdf()">📄 Messprotokoll als PDF herunterladen</button>
+      </div>
+      <div id="labPdfHinweis" class="box gut versteckt" style="margin-top:.6rem">
+        <span class="ic">✓</span><div>PDF erstellt. <strong>Bitte unverändert an deine Lehrkraft senden.</strong></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer class="fuss">
+  <div class="fuss-inner">
+    <span>KI&nbsp;Labor&nbsp;DASM · Virtuelles Labor</span>
+    <span>Lycée technique d'Ettelbruck · Elektrotechnik</span>
+  </div>
+</footer>
+
+<!-- Bibliotheken -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+/* =====================================================================
+   KI Labor DASM — Virtuelles Drehstrom-Asynchronlabor
+   - Echtzeit-Physiksimulation (Gamma-Ersatzschaltbild, identisch zu den Bildern)
+   - Belastung ueber virtuelle Bremse, Maschine sucht ihren Arbeitspunkt
+   - Messpunkte aufnehmen -> Kennlinie M(n) live zeichnen
+   - Fehlbedienung -> Punktabzug, Ereignisprotokoll
+   - Auswertung (M_K, s_K, eta) + PDF-Export mit Pruefcode
+   ===================================================================== */
+'use strict';
+
+/* ---------- Maschinenparameter (identisch zum Python-Modell) ---------- */
+const P = {
+  U:230, U_LL:400, f:50, p:2,
+  R1:5.0, R2:4.5, X:15.0, Xh:150.0, RFe:3527.0, MR:0.25
+};
+const NS = 60*P.f/P.p;                 // 1500 1/min
+const OMS = 2*Math.PI*NS/60;           // 157.08 rad/s
+const SK = P.R2/Math.sqrt(P.R1*P.R1 + P.X*P.X);                 // ~0.285
+const MK = 3*P.U*P.U/(2*OMS*(P.R1+Math.sqrt(P.R1*P.R1+P.X*P.X)));// ~24.27 Nm
+const fmt=(x,d=0)=>Number(x).toLocaleString('de-DE',{minimumFractionDigits:d,maximumFractionDigits:d});
+
+/* ---------- Betriebspunkt fuer gegebenen Schlupf ---------- */
+function betrieb(s){
+  s=Math.max(s,1e-4);
+  const ZrRe=P.R1+P.R2/s, ZrIm=P.X;
+  const den=ZrRe*ZrRe+ZrIm*ZrIm;
+  const I2re= P.U*ZrRe/den, I2im=-P.U*ZrIm/den;
+  const I1re= I2re + P.U/P.RFe;
+  const I1im= I2im - P.U/P.Xh;
+  const I1=Math.hypot(I1re,I1im);
+  const I2=Math.hypot(I2re,I2im);
+  const cosphi=I1re/I1;
+  const Pzu=3*P.U*I1re;
+  const Pd=3*I2*I2*(P.R2/s);
+  const M=Pd/OMS;                       // entwickeltes (Luftspalt-)Moment
+  const Pcu1=3*I2*I2*P.R1;
+  const Pcu2=s*Pd;
+  const Pfe=3*P.U*P.U/P.RFe;
+  const om=(1-s)*OMS;
+  const Preib=P.MR*om;
+  const Pab=(1-s)*Pd - Preib;           // Wellenleistung
+  const Mw = om>1e-3 ? Pab/om : 0;      // Wellenmoment (Bremse misst dies)
+  const eta = Pzu>1 ? Math.max(Pab/Pzu,0) : 0;
+  return {s, n:NS*(1-s), I1, I2, cosphi, Pzu, Pd, M, Mw,
+          Pcu1, Pcu2, Pfe, Preib, Pab, eta};
+}
+function Mdev(s){ s=Math.max(s,1e-4);
+  const ZrRe=P.R1+P.R2/s, den=ZrRe*ZrRe+P.X*P.X;
+  const I2sq=P.U*P.U/den; return 3*I2sq*(P.R2/s)/OMS; }
+
+/* stabilen Schlupf fuer gefordertes (entwickeltes) Moment finden */
+function stabilerSchlupf(Mziel){
+  if(Mziel<=0) return 1e-4;
+  if(Mziel>=MK) return SK;
+  let lo=1e-4, hi=SK;
+  for(let i=0;i<60;i++){ const mid=(lo+hi)/2; (Mdev(mid)<Mziel)?lo=mid:hi=mid; }
+  return (lo+hi)/2;
+}
+
+/* ===================================================================
+   ZUSTAND
+   =================================================================== */
+const L = {
+  name:'', klasse:'', datum:'',
+  laeuft:false, kipped:false, getrippt:false,
+  bremse:0,                 // Sollmoment der Bremse [Nm] (Wellenmoment-Vorgabe)
+  n:0,                      // animierte Drehzahl
+  s:1,                      // aktueller Schlupf
+  punkte:100,               // Pruefstand-Punkte
+  messungen:[],             // aufgenommene Messpunkte
+  ereignisse:[],            // Protokoll
+  kipZaehler:0,
+  stallZeit:0,              // s, wie lange gekippt
+  startZeit:null,
+  letzteLast0Warn:0,
+  chart:null
+};
+
+/* ===================================================================
+   START / ANMELDUNG
+   =================================================================== */
+/* ===================================================================
+   ZUGANG  --  Versuch nur nach bestandenem Antestat (oder Lehrer-Passwort)
+   =================================================================== */
+const DASM_KEY='dasm_antestat_v1';
+const DASM_PASSWORT='DASMBLETO';
+let DASM_ZUGANG={erlaubt:false, abzug:0, lehrer:false};
+function dasmLoad(){ try{ return JSON.parse(localStorage.getItem(DASM_KEY))||{}; }catch(e){ return {}; } }
+function gateFreigeben(hinweis){
+  document.getElementById('labGate')?.classList.add('versteckt');
+  document.getElementById('labStartBox')?.classList.remove('versteckt');
+  const b=document.getElementById('labFreiHinweis');
+  if(b){ b.classList.remove('versteckt'); const d=b.querySelector('div'); if(d) d.innerHTML=hinweis; }
+}
+function gateInit(){
+  const st=dasmLoad();
+  if(st.bestanden){
+    DASM_ZUGANG={erlaubt:true, abzug:st.abzug||0, lehrer:false};
+    gateFreigeben('Antestat bestanden ('+(st.letzteProzent||'≥60')+' %). '
+      +(st.abzug?'Start mit '+(100-st.abzug)+' Punkten ('+st.fehlversuche+' Fehlversuch(e)).':'Start mit 100 Punkten.'));
+    return;
+  }
+  const gate=document.getElementById('labGate'), start=document.getElementById('labStartBox');
+  if(!gate) return;            // Seite ohne Sperre -> nichts tun
+  start?.classList.add('versteckt');
+  gate.classList.remove('versteckt');
+  const msg=document.getElementById('gateMsg');
+  if(msg){
+    if(st.gesperrt){
+      msg.innerHTML='<strong>Versuch nicht bestanden.</strong> Der Antestat wurde dreimal nicht bestanden ('
+        +(st.fehlversuche||3)+' Fehlversuche). Wende dich an die Lehrkraft.';
+    } else if(st.versuche){
+      msg.innerHTML='<strong>Antestat noch nicht bestanden.</strong> Du brauchst mindestens 60 %. Bisher '
+        +(st.fehlversuche||0)+' Fehlversuch(e). Zurück zum <a href="antestat.html">Antestat</a>.';
+    } else {
+      msg.innerHTML='<strong>Zugang gesperrt.</strong> Bestehe zuerst den <a href="antestat.html">Antestat</a> '
+        +'(mindestens 60 %), um den Versuch zu starten.';
+    }
+  }
+}
+function lehrerEntsperren(){
+  const v=(document.getElementById('gatePass')?.value||'').trim();
+  if(v===DASM_PASSWORT){
+    DASM_ZUGANG={erlaubt:true, abzug:0, lehrer:true};
+    gateFreigeben('🔓 Lehrer-Zugang aktiv (Passwort). Antestat übersprungen, voller Punktestand.');
+  } else {
+    document.getElementById('gatePassFehler')?.classList.remove('versteckt');
+  }
+}
+
+function laborStarten(){
+  if(!DASM_ZUGANG.erlaubt){ gateInit(); return; }
+  const name=document.getElementById('labName').value.trim();
+  const klasse=document.getElementById('labKlasse').value.trim();
+  if(!name||!klasse){ document.getElementById('labStartFehler').classList.remove('versteckt'); return; }
+  L.name=name; L.klasse=klasse; L.datum=new Date().toLocaleDateString('de-DE');
+  L.startZeit=new Date();
+  L.punkte=Math.max(0,100-(DASM_ZUGANG.abzug||0));
+  document.getElementById('labStartBox').classList.add('versteckt');
+  document.getElementById('laborBox').classList.remove('versteckt');
+  chartInit();
+  ereignis('Prüfstand betreten von '+name+' ('+klasse+')','info');
+  if(DASM_ZUGANG.lehrer){ ereignis('Lehrer-Zugang: Antestat übersprungen.','info'); }
+  else if(DASM_ZUGANG.abzug>0){ ereignis('Startpunkte 100 − '+DASM_ZUGANG.abzug+' (Antestat-Fehlversuche) = '+L.punkte+'.','warn'); }
+  punkteAnzeigen?.();
+  loop(performance.now());
+}
+
+/* ===================================================================
+   STEUERUNG
+   =================================================================== */
+function maschineEin(){
+  if(L.getrippt){ ereignis('Erst Motorschutz zurücksetzen (Reset).','warn'); return; }
+  if(L.laeuft) return;
+  // Anlauf unter zu hoher Last?
+  const MneedStart = L.bremse + P.MR;
+  if(MneedStart > MK*0.96){
+    abzug(10,'Anlauf unter zu hoher Last versucht – Maschine kommt nicht hoch. Bremse vor dem Start lösen!');
+    // kurzer Stall-Zucker
+    L.laeuft=true; L.kipped=true; L.stallZeit=0;
+    statusSetzen();
+    return;
+  }
+  L.laeuft=true; L.kipped=false; L.stallZeit=0;
+  ereignis('Netzschalter EIN – Maschine läuft hoch.','ok');
+  statusSetzen();
+}
+function maschineAus(){
+  if(!L.laeuft && !L.kipped) return;
+  L.laeuft=false; L.kipped=false; L.stallZeit=0;
+  ereignis('Netzschalter AUS – Maschine läuft aus.','info');
+  statusSetzen();
+}
+function bremseGesetzt(v){
+  L.bremse=Number(v);
+  document.getElementById('bremseVal').textContent=fmt(L.bremse,1)+' Nm';
+  const sl=document.getElementById('bremseSlider');
+  sl.style.setProperty('--p',(L.bremse/27*100)+'%');
+  // Last ohne Hochlauf?
+  if(!L.laeuft && !L.kipped && L.bremse>2){
+    const t=performance.now();
+    if(t-L.letzteLast0Warn>1500){
+      L.letzteLast0Warn=t;
+      abzug(10,'Bremse belastet, obwohl die Maschine nicht läuft. Reihenfolge: erst einschalten, hochlaufen lassen, dann belasten.');
+    }
+  }
+}
+function motorschutzReset(){
+  if(!L.getrippt) return;
+  L.getrippt=false; L.kipped=false; L.laeuft=false; L.n=0; L.s=1;
+  ereignis('Motorschutz zurückgesetzt. Maschine ist spannungsfrei.','info');
+  statusSetzen();
+}
+
+/* ===================================================================
+   DYNAMIK (pro Frame)
+   =================================================================== */
+let _last=performance.now();
+function loop(now){
+  const dt=Math.min((now-_last)/1000,0.05); _last=now;
+
+  let zielN;
+  if(L.getrippt){
+    zielN=0;
+  } else if(L.laeuft && !L.kipped){
+    const Mneed=L.bremse+P.MR;
+    if(Mneed>=MK*0.999){
+      // kippen
+      kippAusloesen();
+      zielN=0;
+    } else {
+      const sEq=stabilerSchlupf(Mneed);
+      zielN=NS*(1-sEq);
+    }
+  } else if(L.kipped){
+    // gekippt: nur Erholung wenn Last deutlich unter Anlaufmoment
+    if(L.bremse < Mdev(1)*0.85 - P.MR){
+      L.kipped=false; ereignis('Maschine erholt sich – läuft wieder hoch.','ok'); statusSetzen();
+      zielN=L.n;
+    } else {
+      zielN=0;
+      L.stallZeit+=dt;
+      if(L.stallZeit>4 && !L.getrippt){
+        L.getrippt=true; L.kipped=false; L.laeuft=false;
+        abzug(15,'Maschine zu lange im Kippzustand (Überstrom) – Motorschutz hat ausgelöst!');
+        statusSetzen();
+      }
+    }
+  } else {
+    zielN=0; // ausgelaufen
+  }
+
+  // Drehzahl weich nachfuehren
+  const k = (zielN>L.n) ? 2.6 : 4.5;          // Hochlauf etwas langsamer als Auslauf
+  L.n += (zielN-L.n)*Math.min(k*dt,1);
+  if(Math.abs(zielN-L.n)<0.5) L.n=zielN;
+  L.s = Math.min(Math.max((NS-L.n)/NS,1e-4),1);
+
+  instrumenteAktualisieren();
+  maschineZeichnen(dt);
+  requestAnimationFrame(loop);
+}
+
+function kippAusloesen(){
+  if(L.kipped) return;
+  L.kipped=true; L.kipZaehler++; L.stallZeit=0;
+  if(L.kipZaehler===1){
+    ereignis('⚠ KIPPPUNKT erreicht – Maschine gekippt! Das höchste Moment ist das Kippmoment. '+
+             'Jetzt Bremse lösen, damit die Maschine wieder hochläuft.','warn');
+  } else {
+    abzug(8,'Erneutes Kippen der Maschine. Nähere dich dem Kipppunkt vorsichtiger.');
+  }
+  statusSetzen();
+}
+
+/* ===================================================================
+   INSTRUMENTE
+   =================================================================== */
+function steadyState(){
+  if(!L.laeuft||L.kipped||L.getrippt) return false;
+  const Mneed=L.bremse+P.MR;
+  if(Mneed>=MK) return false;
+  const zielN=NS*(1-stabilerSchlupf(Mneed));
+  return Math.abs(zielN-L.n)<1.5;
+}
+function instrumenteAktualisieren(){
+  let b;
+  if(L.kipped || L.getrippt){
+    // Stillstand unter Spannung: hoher Strom, Anlaufmoment
+    b=betrieb(1);
+    setRead('iv_n',0,0); setRead('iv_M',b.Mw>0?b.Mw:Mdev(1),1);
+    setRead('iv_I',b.I1,1,true); setRead('iv_U',L.getrippt?0:P.U_LL,0);
+    setRead('iv_cos',b.cosphi,2); setRead('iv_s',100,1);
+    setRead('iv_Pzu',L.getrippt?0:b.Pzu,0); setRead('iv_Pab',0,0); setRead('iv_eta',0,1);
+    return;
+  }
+  if(!L.laeuft && L.n<1){
+    ['iv_n','iv_M','iv_I','iv_U','iv_cos','iv_s','iv_Pzu','iv_Pab','iv_eta']
+      .forEach(id=>setRead(id,0,0));
+    return;
+  }
+  b=betrieb(L.s);
+  setRead('iv_n',L.n,0);
+  setRead('iv_M',Math.max(b.Mw,0),1);
+  setRead('iv_I',b.I1,1,b.I1>1.4*3.21);
+  setRead('iv_U',P.U_LL,0);
+  setRead('iv_cos',b.cosphi,2);
+  setRead('iv_s',L.s*100,1);
+  setRead('iv_Pzu',b.Pzu,0);
+  setRead('iv_Pab',Math.max(b.Pab,0),0);
+  setRead('iv_eta',b.eta*100,1);
+  // Live-Arbeitspunkt im Chart
+  if(L.chart && steadyState()){
+    L.chart.data.datasets[2].data=[{x:L.n, y:Math.max(b.Mw,0)}];
+  } else if(L.chart){
+    L.chart.data.datasets[2].data=[{x:L.n, y:Math.max(b.Mw,0)}];
+  }
+  if(L.chart) L.chart.update('none');
+}
+function setRead(id,val,dec,warn){
+  const el=document.getElementById(id); if(!el) return;
+  el.textContent=fmt(val,dec);
+  el.classList.toggle('warn-read', !!warn);
+}
+
+/* ===================================================================
+   STATUS-ANZEIGE
+   =================================================================== */
+function statusSetzen(){
+  const el=document.getElementById('statusLampe');
+  const wrap=document.getElementById('statusWrap');
+  let txt,cls;
+  if(L.getrippt){txt='MOTORSCHUTZ AUSGELÖST';cls='st-trip';}
+  else if(L.kipped){txt='GEKIPPT – LAST LÖSEN';cls='st-kipp';}
+  else if(L.laeuft){txt='BETRIEB';cls='st-run';}
+  else {txt='AUSGESCHALTET';cls='st-off';}
+  el.textContent=txt;
+  wrap.className='status-wrap '+cls;
+  // Buttons
+  document.getElementById('btnEin').disabled=L.laeuft||L.kipped||L.getrippt;
+  document.getElementById('btnAus').disabled=!(L.laeuft||L.kipped);
+  document.getElementById('btnReset').disabled=!L.getrippt;
+}
+
+/* ===================================================================
+   MESSPUNKT AUFNEHMEN
+   =================================================================== */
+function messpunktAufnehmen(){
+  if(!L.laeuft || L.kipped || L.getrippt){
+    ereignis('Messpunkt nur im stabilen Betrieb möglich.','warn'); return;
+  }
+  if(!steadyState()){
+    ereignis('Bitte warten, bis sich die Drehzahl eingependelt hat, dann messen.','warn'); return;
+  }
+  const b=betrieb(L.s);
+  // Doppelte Drehzahl vermeiden
+  if(L.messungen.some(m=>Math.abs(m.n-L.n)<6)){
+    ereignis('Bei dieser Drehzahl gibt es schon einen Messpunkt – Last ändern.','warn'); return;
+  }
+  const m={
+    nr:L.messungen.length+1,
+    U:P.U_LL, I:b.I1, n:L.n, s:L.s*100,
+    M:Math.max(b.Mw,0), cos:b.cosphi,
+    Pzu:b.Pzu, Pab:Math.max(b.Pab,0), eta:b.eta*100
+  };
+  L.messungen.push(m);
+  tabelleAktualisieren();
+  chartPunktHinzufuegen(m);
+  ereignis(`Messpunkt ${m.nr} aufgenommen: n=${fmt(m.n)} 1/min, M=${fmt(m.M,1)} Nm, I=${fmt(m.I,1)} A.`,'ok');
+}
+
+function messpunktLoeschen(idx){
+  L.messungen.splice(idx,1);
+  L.messungen.forEach((m,i)=>m.nr=i+1);
+  tabelleAktualisieren(); chartNeuAufbauen();
+}
+
+function tabelleAktualisieren(){
+  const tb=document.getElementById('messTabelle');
+  if(!L.messungen.length){
+    tb.innerHTML='<tr><td colspan="9" class="txt" style="text-align:center;color:var(--stahl)">Noch keine Messpunkte – Maschine belasten und „Messpunkt aufnehmen".</td></tr>';
+  }else{
+    tb.innerHTML=L.messungen.map((m,i)=>`<tr>
+      <td>${m.nr}</td><td>${fmt(m.U)}</td><td>${fmt(m.I,2)}</td>
+      <td>${fmt(m.n)}</td><td>${fmt(m.s,1)}</td><td>${fmt(m.M,1)}</td>
+      <td>${fmt(m.Pzu)}</td><td>${fmt(m.Pab)}</td>
+      <td>${fmt(m.eta,1)} <button class="del" title="löschen" onclick="messpunktLoeschen(${i})">✕</button></td>
+    </tr>`).join('');
+  }
+  document.getElementById('messAnzahl').textContent=L.messungen.length;
+  const hoechst=L.messungen.reduce((a,m)=>Math.max(a,m.M),0);
+  document.getElementById('hoechstMoment').textContent=fmt(hoechst,1)+' Nm';
+}
+
+/* ===================================================================
+   BEWERTUNG / EREIGNISSE
+   =================================================================== */
+function abzug(pkt,grund){
+  L.punkte=Math.max(0,L.punkte-pkt);
+  ereignis(`−${pkt} Punkte: ${grund}`,'minus');
+  punkteAnzeigen();
+}
+function punkteAnzeigen(){
+  const el=document.getElementById('punkteVal');
+  el.textContent=L.punkte;
+  el.style.color = L.punkte>=80?'var(--readout-gn)':L.punkte>=50?'var(--readout-am)':'var(--warnung)';
+}
+function ereignis(txt,typ='info'){
+  L.ereignisse.push({t:new Date(),txt,typ});
+  const log=document.getElementById('ereignisLog');
+  const zeit=new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const ic={info:'•',ok:'✓',warn:'⚠',minus:'−'}[typ]||'•';
+  const div=document.createElement('div');
+  div.className='ev ev-'+typ;
+  div.innerHTML=`<span class="ev-t">${zeit}</span><span class="ev-ic">${ic}</span><span>${txt}</span>`;
+  log.prepend(div);
+}
+
+/* ===================================================================
+   CHART (Chart.js)
+   =================================================================== */
+function chartInit(){
+  const ctx=document.getElementById('chartKennlinie').getContext('2d');
+  L.chart=new Chart(ctx,{
+    type:'scatter',
+    data:{datasets:[
+      { label:'Messpunkte M(n)', data:[], showLine:true,
+        borderColor:'#1452f0', backgroundColor:'#1452f0',
+        pointRadius:5, pointHoverRadius:7, borderWidth:2.5, tension:0.3, order:2 },
+      { label:'theoretische Kennlinie', data:[], showLine:true,
+        borderColor:'#c7d2e8', backgroundColor:'transparent',
+        pointRadius:0, borderWidth:1.5, borderDash:[5,4], order:3, hidden:true },
+      { label:'Arbeitspunkt', data:[], showLine:false,
+        borderColor:'#e0561b', backgroundColor:'#e0561b',
+        pointRadius:6, pointStyle:'rectRot', borderWidth:2, order:1 }
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false, animation:false,
+      scales:{
+        x:{title:{display:true,text:'Drehzahl n in 1/min'},min:0,max:1550,
+           grid:{color:'#e6eaee'}},
+        y:{title:{display:true,text:'Wellenmoment M in Nm'},min:0,max:27,
+           grid:{color:'#e6eaee'}}
+      },
+      plugins:{legend:{labels:{font:{family:'JetBrains Mono',size:11}}}}
+    }
+  });
+}
+function chartPunktHinzufuegen(m){
+  const d=L.chart.data.datasets[0].data;
+  d.push({x:m.n,y:m.M}); d.sort((a,b)=>a.x-b.x);
+  L.chart.update('none');
+}
+function chartNeuAufbauen(){
+  L.chart.data.datasets[0].data=L.messungen.map(m=>({x:m.n,y:m.M})).sort((a,b)=>a.x-b.x);
+  L.chart.update('none');
+}
+function theoretischeKurveZeigen(){
+  const ds=L.chart.data.datasets[1];
+  if(ds.data.length===0){
+    const pts=[];
+    for(let s=SK; s>=0.001; s*=0.93){ const b=betrieb(s); pts.push({x:b.n,y:Math.max(b.Mw,0)}); }
+    for(let s=SK; s<=1.0; s+=0.03){ const b=betrieb(s); pts.push({x:b.n,y:Math.max(b.Mw,0)}); }
+    ds.data=pts.sort((a,b)=>a.x-b.x);
+  }
+  ds.hidden=!ds.hidden;
+  document.getElementById('btnTheorie').classList.toggle('aktiv-btn',!ds.hidden);
+  L.chart.update();
+}
+
+/* ===================================================================
+   MASCHINEN-ANIMATION (kompaktes Drehfeld, vom echten Schlupf getrieben)
+   =================================================================== */
+let thF=0, thR=0;
+function maschineZeichnen(dt){
+  const cv=document.getElementById('maschineCanvas'); if(!cv) return;
+  const ctx=cv.getContext('2d');
+  if(!cv._init){ const DPR=Math.min(devicePixelRatio||1,2);
+    cv.width=300*DPR; cv.height=300*DPR; ctx.scale(DPR,DPR); cv._init=true; }
+  const W=300,H=300,cx=W/2,cy=H/2,R=104;
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const laeuftFeld = (L.laeuft||L.kipped) && !L.getrippt;
+  const wVis=2*Math.PI/3.2;
+  if(!reduce){
+    if(laeuftFeld) thF+=wVis*dt;
+    thR+=wVis*(1-L.s)*dt;
+  }
+  ctx.clearRect(0,0,W,H);
+  // Gehaeuse
+  ctx.fillStyle='#0c1116';ctx.beginPath();ctx.arc(cx,cy,R+24,0,7);ctx.fill();
+  ctx.lineWidth=18;ctx.strokeStyle='#1b2733';ctx.beginPath();ctx.arc(cx,cy,R+6,0,7);ctx.stroke();
+  for(let i=0;i<24;i++){const a=i/24*2*Math.PI;ctx.strokeStyle='#243240';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*(R-2),cy+Math.sin(a)*(R-2));
+    ctx.lineTo(cx+Math.cos(a)*(R+13),cy+Math.sin(a)*(R+13));ctx.stroke();}
+  // Phasen U V W
+  const ph=[{a:-90,c:'#36d3ff'},{a:30,c:'#3ee07a'},{a:150,c:'#ffb020'}];
+  ph.forEach((p,k)=>{const cur=laeuftFeld?Math.cos(thF-k*2*Math.PI/3):0;const a=p.a*Math.PI/180;
+    const bx=cx+Math.cos(a)*(R+6),by=cy+Math.sin(a)*(R+6);
+    ctx.globalAlpha=0.22+0.55*Math.abs(cur);ctx.fillStyle=p.c;
+    ctx.beginPath();ctx.arc(bx,by,9,0,7);ctx.fill();ctx.globalAlpha=1;});
+  // Feld-Glow
+  if(laeuftFeld){const g=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
+    g.addColorStop(0,'rgba(54,211,255,0.16)');g.addColorStop(1,'rgba(54,211,255,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,R-6,0,7);ctx.fill();}
+  // Laeufer
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(thR);
+  ctx.fillStyle='#0c1116';ctx.beginPath();ctx.arc(0,0,62,0,7);ctx.fill();
+  ctx.strokeStyle='#3a4a58';ctx.lineWidth=2;ctx.stroke();
+  const rl=58;const g2=ctx.createLinearGradient(-rl,0,rl,0);
+  g2.addColorStop(0,'#ff8a3d');g2.addColorStop(.49,'#ffb020');g2.addColorStop(.51,'#5b6b7a');g2.addColorStop(1,'#39475533');
+  ctx.fillStyle=g2;ctx.beginPath();ctx.roundRect(-rl,-15,2*rl,30,9);ctx.fill();
+  ctx.fillStyle='#0c1116';ctx.font='800 13px Archivo';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('N',-rl*0.6,0);ctx.fillStyle='#cdd6df';ctx.fillText('S',rl*0.6,0);
+  ctx.restore();
+  // Feldvektor
+  if(laeuftFeld){const fx=cx+Math.cos(thF)*(R-16),fy=cy+Math.sin(thF)*(R-16);
+    ctx.strokeStyle='#36d3ff';ctx.fillStyle='#36d3ff';ctx.lineWidth=4;ctx.lineCap='round';
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(fx,fy);ctx.stroke();
+    const ang=Math.atan2(fy-cy,fx-cx),h=12;
+    ctx.beginPath();ctx.moveTo(fx,fy);
+    ctx.lineTo(fx-h*Math.cos(ang-0.4),fy-h*Math.sin(ang-0.4));
+    ctx.lineTo(fx-h*Math.cos(ang+0.4),fy-h*Math.sin(ang+0.4));ctx.closePath();ctx.fill();}
+  ctx.fillStyle=laeuftFeld?'#36d3ff':'#46586a';ctx.beginPath();ctx.arc(cx,cy,5,0,7);ctx.fill();
+  // Drehzahl-Label unten
+  ctx.fillStyle='#9aa7b2';ctx.font='600 11px JetBrains Mono';ctx.textAlign='center';
+  ctx.fillText('n = '+fmt(L.n)+' 1/min',cx,H-6);
+}
+
+/* ===================================================================
+   AUSWERTUNG
+   =================================================================== */
+function auswertungAnzeigen(){
+  if(L.messungen.length<4){
+    ereignis('Für eine Auswertung mindestens 4 Messpunkte aufnehmen (besser 8–10, inkl. Kipppunkt).','warn');
+    return;
+  }
+  const sec=document.getElementById('auswertung');
+  sec.classList.remove('versteckt');
+  // gemessene Kennwerte
+  const MKmess=L.messungen.reduce((a,m)=>Math.max(a,m.M),0);
+  const mKipp=L.messungen.find(m=>m.M===MKmess);
+  const sKmess=mKipp? mKipp.s/100 : SK;
+  const etaMax=L.messungen.reduce((a,m)=>Math.max(a,m.eta),0);
+  const mEta=L.messungen.find(m=>m.eta===etaMax);
+
+  setTxt('a_ns', fmt(NS)+' 1/min');
+  setTxt('a_MK', fmt(MKmess,1)+' Nm');
+  setTxt('a_nK', fmt(mKipp?mKipp.n:NS*(1-SK))+' 1/min');
+  setTxt('a_sK', fmt(sKmess*100,1)+' %');
+  setTxt('a_etaMax', fmt(etaMax,1)+' %');
+  setTxt('a_etaP', mEta?fmt(mEta.Pab)+' W':'–');
+  setTxt('a_punkte', L.punkte+' / 100');
+  setTxt('a_MKtheo', fmt(MK,1)+' Nm');
+  setTxt('a_sKtheo', fmt(SK*100,1)+' %');
+
+  // Vergleichstext
+  const abwM=Math.abs(MKmess-MK)/MK*100;
+  document.getElementById('a_vergleich').innerHTML =
+    `Dein gemessenes Kippmoment weicht um <b>${fmt(abwM,1)} %</b> vom berechneten Wert ab `+
+    `(${fmt(MK,1)} Nm aus dem Ersatzschaltbild). Kleine Abweichungen sind normal: Die Bremse `+
+    `misst das <i>Wellenmoment</i>, das um die Reibung kleiner ist als das berechnete Luftspaltmoment.`;
+
+  if(L.chart){ theoretischeKurveZeigen(); if(L.chart.data.datasets[1].hidden) theoretischeKurveZeigen(); }
+  punkteAnzeigen();
+  sec.scrollIntoView({behavior:'smooth'});
+}
+function setTxt(id,t){const e=document.getElementById(id);if(e)e.textContent=t;}
+
+/* ===================================================================
+   PDF-EXPORT (Messprotokoll)
+   =================================================================== */
+function laborPdf(){
+  if(L.messungen.length<4){ ereignis('Mindestens 4 Messpunkte nötig, bevor du das Protokoll erzeugst.','warn'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const W=210, M=14; let y=0;
+  const MKmess=L.messungen.reduce((a,m)=>Math.max(a,m.M),0);
+  const mKipp=L.messungen.find(m=>m.M===MKmess);
+  const etaMax=L.messungen.reduce((a,m)=>Math.max(a,m.eta),0);
+
+  // Kopf
+  doc.setFillColor(16,22,29);doc.rect(0,0,W,28,'F');
+  doc.setDrawColor(54,211,255);doc.setLineWidth(0.8);doc.circle(M+6,14,5,'S');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(14);
+  doc.text('KI Labor DASM',M+16,12);
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(150,167,178);
+  doc.text('Messprotokoll - Belastungskennlinie & Kippmoment',M+16,18);
+  doc.setFontSize(8);doc.text('Lycee technique d\'Ettelbruck',W-M,12,{align:'right'});
+  doc.text('VERSUCH E-7',W-M,18,{align:'right'});
+  y=36;
+
+  // Schuelerdaten
+  doc.setDrawColor(212,218,224);doc.setFillColor(244,246,248);
+  doc.roundedRect(M,y,W-2*M,16,2,2,'FD');
+  doc.setTextColor(20,25,30);doc.setFont('helvetica','bold');doc.setFontSize(9.5);
+  doc.text('Name:',M+4,y+7);doc.text('Klasse:',M+70,y+7);doc.text('Datum:',M+125,y+7);
+  doc.setFont('helvetica','normal');
+  doc.text(L.name||'-',M+18,y+7);doc.text(L.klasse||'-',M+85,y+7);doc.text(L.datum||'-',M+140,y+7);
+  doc.setFont('helvetica','bold');doc.text('Pruefstand-Punkte:',M+4,y+12.5);
+  doc.setFont('helvetica','normal');
+  doc.setTextColor(...(L.punkte>=80?[31,157,85]:L.punkte>=50?[200,140,0]:[224,86,27]));
+  doc.text(L.punkte+' / 100',M+40,y+12.5);
+  y+=22;
+
+  // Maschinendaten
+  doc.setTextColor(20,25,30);doc.setFont('helvetica','bold');doc.setFontSize(8);
+  doc.text(`Versuchsmaschine: 3~ Asynchronmotor, Kaefiglaeufer - P_N=1,5 kW - U_N=400 V (Y) - p=2 - n_s=${fmt(NS)} 1/min`,M,y);
+  y+=6;
+
+  // Messtabelle
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text('Messwerte',M,y);y+=2;
+  doc.line(M,y+1,W-M,y+1);y+=6;
+  const heads=['Nr','U/V','I/A','n/(1/min)','s/%','M/Nm','P_zu/W','P_ab/W','eta/%'];
+  const colW=[10,16,16,24,16,18,24,24,18];
+  const tableW=colW.reduce((a,b)=>a+b,0);
+  let x=M;
+  // Kopfzeile als eigene Bande mit klarem Abstand zur ersten Messzeile
+  const headTop=y-4.5, headH=7;
+  doc.setFillColor(16,22,29);doc.rect(M,headTop,tableW,headH,'F');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(7.5);
+  heads.forEach((h,i)=>{doc.text(h,x+colW[i]/2,headTop+headH/2+1.1,{align:'center'});x+=colW[i];});
+  y=headTop+headH+4;
+  doc.setFont('courier','normal');doc.setFontSize(7.5);
+  L.messungen.forEach((m,r)=>{
+    if(y>250){doc.addPage();y=20;}
+    x=M;
+    if(r%2===0){doc.setFillColor(248,250,251);doc.rect(M,y-3.4,colW.reduce((a,b)=>a+b,0),5,'F');}
+    doc.setTextColor(m.M===MKmess?224:30, m.M===MKmess?86:35, m.M===MKmess?27:40);
+    if(m.M===MKmess)doc.setFont('courier','bold');else doc.setFont('courier','normal');
+    const vals=[m.nr, fmt(m.U), fmt(m.I,2), fmt(m.n), fmt(m.s,1), fmt(m.M,1), fmt(m.Pzu), fmt(m.Pab), fmt(m.eta,1)];
+    vals.forEach((v,i)=>{doc.text(String(v),x+colW[i]/2,y,{align:'center'});x+=colW[i];});
+    y+=5;
+  });
+  y+=3;
+  doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(110,120,130);
+  doc.text('Rot hervorgehoben: hoechstes gemessenes Moment = Kippmoment.',M,y);y+=7;
+
+  // Kennlinie als Bild
+  if(L.chart){
+    if(y>180){doc.addPage();y=20;}
+    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(20,25,30);
+    doc.text('Aufgenommene Kennlinie M = f(n)',M,y);y+=3;
+    try{
+      const img=L.chart.toBase64Image('image/png',1);
+      doc.addImage(img,'PNG',M,y,W-2*M,(W-2*M)*0.5);
+      y+=(W-2*M)*0.5+5;
+    }catch(e){ y+=2; }
+  }
+
+  // Ergebnisse
+  if(y>250){doc.addPage();y=20;}
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.text('Ermittelte Kennwerte',M,y);y+=2;
+  doc.line(M,y+1,W-M,y+1);y+=6;
+  doc.setFontSize(8.5);
+  const erg=[
+    ['Synchrone Drehzahl n_s', fmt(NS)+' 1/min'],
+    ['Kippmoment M_K (gemessen)', fmt(MKmess,1)+' Nm'],
+    ['Kippdrehzahl n_K', fmt(mKipp?mKipp.n:0)+' 1/min'],
+    ['Kippschlupf s_K', fmt(mKipp?mKipp.s:0,1)+' %'],
+    ['Bester Wirkungsgrad η_max', fmt(etaMax,1)+' %'],
+    ['M_K (berechnet, Ersatzschaltbild)', fmt(MK,1)+' Nm'],
+  ];
+  erg.forEach(([k,v])=>{
+    doc.setFont('helvetica','normal');doc.setTextColor(60,70,81);doc.text(k,M+2,y);
+    doc.setFont('courier','bold');doc.setTextColor(20,25,30);doc.text(v,M+95,y);y+=5.5;
+  });
+
+  // Pruefcode
+  y+=3; if(y>250){doc.addPage();y=20;}
+  const code=laborPruefcode(MKmess);
+  doc.setDrawColor(180,190,200);doc.setFillColor(238,241,244);
+  doc.roundedRect(M,y,W-2*M,22,2,2,'FD');
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(20,25,30);
+  doc.text('Pruefcode:',M+4,y+7);
+  doc.setFont('courier','bold');doc.setFontSize(12);doc.setTextColor(20,82,240);
+  doc.text(code,M+4,y+14);
+  doc.setFont('helvetica','normal');doc.setFontSize(7.3);doc.setTextColor(91,107,122);
+  doc.text('Aus Messwerten und Punktestand berechnet. PDF bitte unveraendert an die Lehrkraft senden.',M+4,y+19.5);
+
+  // Fusszeilen
+  const pages=doc.getNumberOfPages();
+  for(let p=1;p<=pages;p++){doc.setPage(p);
+    doc.setDrawColor(212,218,224);doc.line(M,289,W-M,289);
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(140,150,160);
+    doc.text('KI Labor DASM - Messprotokoll',M,293);
+    doc.text(code,W/2,293,{align:'center'});
+    doc.text(`Seite ${p}/${pages}`,W-M,293,{align:'right'});
+  }
+  doc.save(`Messprotokoll_DASM_${(L.name||'Schueler').replace(/[^a-zA-Z0-9]/g,'_').slice(0,24)}.pdf`);
+  ereignis('Messprotokoll als PDF erzeugt.','ok');
+  document.getElementById('labPdfHinweis')?.classList.remove('versteckt');
+}
+function laborPruefcode(MKmess){
+  const muster=L.messungen.map(m=>`${Math.round(m.n)},${m.M.toFixed(1)}`).join(';');
+  const roh=`${L.name}#${L.klasse}#${L.messungen.length}#${MKmess.toFixed(1)}#${L.punkte}#${muster}`;
+  let h=0; for(let i=0;i<roh.length;i++){h=(h*31+roh.charCodeAt(i))>>>0;}
+  let h2=2166136261; for(let i=0;i<roh.length;i++){h2^=roh.charCodeAt(i);h2=(h2*16777619)>>>0;}
+  return (('0000'+h.toString(16)).slice(-8)+('0000'+h2.toString(16)).slice(-8)).toUpperCase().replace(/(.{4})/g,'$1 ').trim();
+}
+
+/* ---- Initialwerte ---- */
+window.addEventListener('DOMContentLoaded',()=>{
+  punkteAnzeigen?.();
+  gateInit();
+});
+
+</script>
+
+<style>
+/* Start-Gate Formular (wie Antestat) */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:560px){.form-grid{grid-template-columns:1fr}}
+.feld{display:flex;flex-direction:column;gap:.4rem}
+.feld label{font-family:'JetBrains Mono';font-size:.78rem;font-weight:600;color:var(--stahl)}
+.feld input{font-family:'Inter';font-size:1rem;padding:.75rem .9rem;border:1.5px solid var(--gitter);
+  border-radius:9px;background:var(--karte);color:var(--tinte)}
+.feld input:focus{outline:none;border-color:var(--spannung);box-shadow:0 0 0 3px var(--spannung-l)}
+
+/* Anleitung */
+.anleitung summary{cursor:pointer;list-style:none}
+.anleitung summary::-webkit-details-marker{display:none}
+.anleitung summary::after{content:"▾";float:right;color:var(--stahl);font-size:1.1rem}
+.anleitung[open] summary::after{content:"▴"}
+
+/* ===== Prüfstand-Deck ===== */
+.deck{background:var(--panel);border:1px solid var(--panel-rand);border-radius:var(--radius);
+  overflow:hidden;box-shadow:var(--schatten)}
+.deck-kopf{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;
+  padding:1rem 1.3rem;border-bottom:1px solid var(--panel-rand);background:var(--panel-2)}
+.deck-titel{font-family:'JetBrains Mono';font-size:.8rem;letter-spacing:.1em;color:var(--readout)}
+.deck-punkte{display:flex;align-items:center;gap:.7rem}
+.dp-lab{font-family:'JetBrains Mono';font-size:.62rem;letter-spacing:.1em;color:var(--stahl-2)}
+.dp-val{font-family:'JetBrains Mono';font-weight:700;font-size:1.7rem;color:var(--readout-gn);line-height:1}
+.deck-grid{display:grid;grid-template-columns:auto 1fr;gap:1.4rem;padding:1.4rem 1.3rem}
+@media(max-width:760px){.deck-grid{grid-template-columns:1fr;justify-items:center}}
+.deck-machine{display:flex;flex-direction:column;align-items:center;gap:.8rem}
+#maschineCanvas{width:280px;height:280px;max-width:100%}
+.status-wrap{display:inline-flex;align-items:center;gap:.55rem;padding:.5rem 1rem;border-radius:99px;
+  font-family:'JetBrains Mono';font-size:.78rem;font-weight:600;letter-spacing:.05em;border:1px solid}
+.status-dot{width:9px;height:9px;border-radius:50%}
+.st-off{background:#1b232c;border-color:#2a3744;color:#8593a0}.st-off .status-dot{background:#5b6b7a}
+.st-run{background:rgba(62,224,122,.12);border-color:#1f7a45;color:#3ee07a}
+.st-run .status-dot{background:#3ee07a;box-shadow:0 0 8px #3ee07a;animation:puls 1.4s infinite}
+.st-kipp{background:rgba(255,176,32,.12);border-color:#8a6010;color:#ffb020}
+.st-kipp .status-dot{background:#ffb020;box-shadow:0 0 8px #ffb020}
+.st-trip{background:rgba(224,86,27,.15);border-color:#8a3410;color:#ff7a45}
+.st-trip .status-dot{background:#e0561b;box-shadow:0 0 8px #e0561b;animation:puls .7s infinite}
+@keyframes puls{50%{opacity:.4}}
+
+.instr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;align-self:center;width:100%}
+@media(max-width:520px){.instr-grid{grid-template-columns:repeat(2,1fr)}}
+.instr{background:#0b1016;border:1px solid var(--panel-rand);border-radius:9px;padding:.7rem .8rem;
+  display:flex;flex-direction:column;gap:.15rem}
+.i-lab{font-family:'JetBrains Mono';font-size:.58rem;letter-spacing:.07em;color:var(--stahl-2);
+  text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.i-val{font-family:'JetBrains Mono';font-weight:700;font-size:1.5rem;color:var(--readout);line-height:1.05}
+.i-val.am{color:var(--readout-am)}.i-val.gn{color:var(--readout-gn)}
+.i-val.warn-read{color:#ff5a3c!important;animation:puls .8s infinite}
+.i-unit{font-family:'JetBrains Mono';font-size:.62rem;color:var(--stahl-2)}
+
+.deck-controls{display:grid;grid-template-columns:auto 1fr auto;gap:1.2rem;align-items:center;
+  padding:1.1rem 1.3rem;border-top:1px solid var(--panel-rand);background:var(--panel-2)}
+@media(max-width:860px){.deck-controls{grid-template-columns:1fr}}
+.ctrl-buttons{display:flex;flex-direction:column;gap:.5rem}
+.dbtn{font-family:'Archivo';font-weight:700;font-size:.85rem;padding:.6rem 1rem;border-radius:8px;
+  border:1px solid var(--panel-rand);background:#0b1016;color:#dfe6ec;cursor:pointer;transition:.13s;
+  white-space:nowrap;text-align:left}
+.dbtn:hover:not(:disabled){border-color:var(--readout)}
+.dbtn:disabled{opacity:.4;cursor:not-allowed}
+.dbtn.ein:hover:not(:disabled){background:rgba(62,224,122,.15);border-color:#3ee07a;color:#3ee07a}
+.dbtn.aus:hover:not(:disabled){background:rgba(255,176,32,.12);border-color:#ffb020;color:#ffb020}
+.dbtn.reset:hover:not(:disabled){background:rgba(224,86,27,.12);border-color:#e0561b;color:#ff7a45}
+.ctrl-bremse{display:flex;flex-direction:column;gap:.4rem}
+.cb-head{display:flex;justify-content:space-between;font-family:'JetBrains Mono';font-size:.72rem;
+  color:#cdd6df;letter-spacing:.04em}
+.cb-head .mono{color:var(--readout-am);font-weight:700;font-size:.85rem}
+.cb-scale{display:flex;justify-content:space-between;font-family:'JetBrains Mono';font-size:.62rem;color:var(--stahl-2)}
+#bremseSlider{-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:99px;
+  background:linear-gradient(90deg,var(--readout-am) 0%,var(--readout-am) var(--p,0%),#2a3744 var(--p,0%),#2a3744 100%);
+  cursor:pointer;outline:none}
+#bremseSlider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:22px;height:22px;
+  border-radius:50%;background:#fff;border:3px solid var(--readout-am);box-shadow:0 2px 6px rgba(0,0,0,.4);cursor:pointer}
+#bremseSlider::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--readout-am)}
+.deck-controls .btn{align-self:center}
+.deck-foot{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:.8rem 1.3rem;
+  border-top:1px solid var(--panel-rand);font-family:'JetBrains Mono';font-size:.78rem;color:var(--stahl-2)}
+.deck-foot b{color:var(--readout)}
+
+/* Chart */
+.chart-box{height:340px;margin-top:1rem}
+.aktiv-btn{background:var(--spannung)!important;color:#fff!important;border-color:var(--spannung)!important}
+
+/* Ereignisprotokoll */
+.ev-log{overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:.4rem;min-height:120px;
+  font-family:'JetBrains Mono';font-size:.78rem}
+.ev{display:flex;gap:.5rem;align-items:flex-start;padding:.45rem .6rem;border-radius:7px;line-height:1.4;
+  background:#f8fafb;border:1px solid var(--gitter-2)}
+.ev-t{color:var(--stahl-2);flex:none;font-size:.7rem;padding-top:.05rem}
+.ev-ic{flex:none;font-weight:700}
+.ev-info{color:#3a4651}.ev-info .ev-ic{color:var(--stahl)}
+.ev-ok{background:var(--messwert-l);border-color:#bce3ca;color:#155f33}.ev-ok .ev-ic{color:var(--messwert)}
+.ev-warn{background:var(--warnung-l);border-color:#f6cbb4;color:#8a3410}.ev-warn .ev-ic{color:var(--warnung)}
+.ev-minus{background:#fde8e8;border-color:#f3c0c0;color:#9b1c1c}.ev-minus .ev-ic{color:#dc2626;font-weight:800}
+
+/* Messtabelle Löschen-Button */
+.messtab td{position:relative}
+.del{background:none;border:none;color:var(--warnung);cursor:pointer;font-size:.85rem;
+  padding:0 .2rem;margin-left:.3rem;opacity:.6}
+.del:hover{opacity:1}
+</style>
+
+<script>
+/* a_MKm / a_sKm Spiegelung fuer die Vergleichstabelle nach Auswertung */
+(function(){
+  const _orig = window.auswertungAnzeigen;
+  window.auswertungAnzeigen = function(){
+    _orig();
+    const mk=document.getElementById('a_MK')?.textContent;
+    const sk=document.getElementById('a_sK')?.textContent;
+    const e1=document.getElementById('a_MKm'); if(e1&&mk) e1.textContent=mk;
+    const e2=document.getElementById('a_sKm'); if(e2&&sk) e2.textContent=sk;
+  };
+})();
+</script>
+</body>
+</html>

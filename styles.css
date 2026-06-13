@@ -1,0 +1,267 @@
+/* =====================================================================
+   KI Labor DASM — Gemeinsames Stylesheet
+   Designsprache:  "Kupfer & Phosphor"
+   Helle Protokollseiten in kühlem Papier mit Kupfer-Akzent (Wicklung),
+   tiefschwarze Instrumenten-Panels mit leuchtenden Anzeigen.
+   ===================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+/* ---- Design-Token ------------------------------------------------- */
+:root{
+  /* Papier / Flächen */
+  --papier:    #eef1f6;   /* Seitenhintergrund, kühl */
+  --papier-2:  #e4e9f0;   /* abgesetzte Zonen */
+  --karte:     #ffffff;
+  --tinte:     #121a26;   /* Haupttext / Struktur (statt generischem Blau) */
+  --tinte-2:   #2a3442;
+  --stahl:     #586675;   /* Sekundärtext */
+  --stahl-2:   #8794a3;
+  --gitter:    #d7dde6;   /* Linien */
+  --gitter-2:  #e8ecf2;
+
+  /* Kupfer — Signaturfarbe (Motorwicklung) */
+  --kupfer:    #c06a37;
+  --kupfer-d:  #9c5328;
+  --kupfer-l:  #f7e9df;
+  --kupfer-gl: #e08a4d;
+
+  /* Spannungs-Blau — sparsam (Auswahl, Info, Links) */
+  --spannung:  #2a52e0;
+  --spannung-d:#1c3bb0;
+  --spannung-l:#e9edfc;
+
+  /* Status */
+  --warnung:   #cf5a2c;   /* Kipppunkt / Abzug (Kupfer-Familie) */
+  --warnung-l: #fbe7dd;
+  --messwert:  #1f8f4e;   /* korrekt / gut */
+  --messwert-l:#e3f3ea;
+  --violett:   #7c3aed;
+
+  /* Instrumenten-Panel (dunkel, anodisiert) */
+  --panel:     #0e141c;
+  --panel-2:   #161f29;
+  --panel-3:   #1d2833;
+  --panel-rand:#28333f;
+  --readout:   #38d6ff;   /* Phosphor-Cyan */
+  --readout-am:#ffb43c;   /* Bernstein */
+  --readout-gn:#46e487;   /* Grün */
+
+  --radius:    16px;
+  --radius-s:  10px;
+  --schatten-s:0 1px 2px rgba(18,26,38,.06), 0 1px 3px rgba(18,26,38,.04);
+  --schatten:  0 1px 2px rgba(18,26,38,.05), 0 6px 16px rgba(18,26,38,.07);
+  --schatten-m:0 2px 4px rgba(18,26,38,.06), 0 16px 40px rgba(18,26,38,.12);
+  --schatten-panel:0 1px 0 rgba(255,255,255,.04) inset, 0 18px 40px rgba(8,12,18,.45);
+  --maxw:      1180px;
+}
+
+/* ---- Reset / Basis ------------------------------------------------ */
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  background:var(--papier);
+  color:var(--tinte);
+  line-height:1.65;
+  font-size:16px;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  background-image:
+    radial-gradient(1200px 600px at 78% -8%, rgba(192,106,55,.06), transparent 60%),
+    radial-gradient(1000px 520px at 0% 0%, rgba(42,82,224,.05), transparent 55%);
+  background-attachment:fixed;
+}
+h1,h2,h3,h4{font-family:'Archivo',sans-serif;line-height:1.1;letter-spacing:-.015em;color:var(--tinte);font-weight:800}
+p{text-wrap:pretty}
+a{color:var(--spannung);text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:2px}
+.mono{font-family:'JetBrains Mono',monospace}
+strong,b{font-weight:700}
+:focus-visible{outline:2.5px solid var(--kupfer);outline-offset:2px;border-radius:4px}
+img{max-width:100%}
+
+/* ---- Kopfzeile / Navigation -------------------------------------- */
+.kopf{
+  position:sticky;top:0;z-index:50;
+  background:rgba(238,241,246,.82);
+  backdrop-filter:saturate(150%) blur(12px);
+  -webkit-backdrop-filter:saturate(150%) blur(12px);
+  border-bottom:1px solid var(--gitter);
+}
+.kopf-inner{
+  max-width:var(--maxw);margin:0 auto;padding:.75rem 1.5rem;
+  display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;
+}
+.logo{display:flex;align-items:center;gap:.75rem;font-family:'Archivo';font-weight:800;
+  font-size:1.06rem;letter-spacing:-.02em;color:var(--tinte)}
+.logo:hover{text-decoration:none}
+.logo .mark{
+  width:38px;height:38px;border-radius:10px;background:var(--panel);
+  display:grid;place-items:center;flex:none;position:relative;overflow:hidden;
+  box-shadow:0 2px 8px rgba(8,12,18,.35), 0 0 0 1px var(--panel-rand) inset;
+}
+.logo .mark::before{content:"";position:absolute;inset:0;
+  background:conic-gradient(from 0deg, transparent 0 270deg, var(--readout) 330deg, transparent 360deg);
+  animation:spin 3.2s linear infinite}
+.logo .mark::after{content:"";width:15px;height:15px;border-radius:50%;
+  background:var(--panel);border:2.5px solid var(--readout);z-index:1;
+  box-shadow:0 0 10px rgba(56,214,255,.5)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.logo small{display:block;font-family:'JetBrains Mono';font-weight:500;font-size:.6rem;
+  letter-spacing:.18em;color:var(--stahl);margin-top:2px}
+.nav{display:flex;gap:.25rem;margin-left:auto;flex-wrap:wrap}
+.nav a{
+  font-family:'JetBrains Mono';font-size:.78rem;font-weight:500;letter-spacing:.01em;
+  color:var(--stahl);padding:.5rem .8rem;border-radius:9px;white-space:nowrap;transition:.15s}
+.nav a:hover{background:var(--karte);color:var(--tinte);text-decoration:none;box-shadow:var(--schatten-s)}
+.nav a.aktiv{background:var(--tinte);color:#fff}
+.nav a.aktiv:hover{background:var(--tinte-2)}
+
+/* ---- Layout-Container -------------------------------------------- */
+.wrap{max-width:var(--maxw);margin:0 auto;padding:2.6rem 1.5rem 5rem}
+.eyebrow{
+  font-family:'JetBrains Mono';font-size:.72rem;font-weight:600;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--kupfer-d);margin-bottom:1rem;
+  display:flex;align-items:center;gap:.7rem}
+.eyebrow::before{content:"";width:28px;height:2px;background:var(--kupfer);border-radius:2px}
+
+/* ---- Karten ------------------------------------------------------- */
+.karte{
+  background:var(--karte);border:1px solid var(--gitter);border-radius:var(--radius);
+  box-shadow:var(--schatten-s);padding:1.7rem 1.8rem;margin-bottom:1.3rem;
+}
+.karte h2{font-size:1.5rem;margin-bottom:.6rem}
+.karte h3{font-size:1.15rem;margin:1.1rem 0 .5rem;font-weight:700}
+.karte h3:first-child{margin-top:0}
+.karte p{margin-bottom:.85rem;color:var(--tinte-2)}
+.karte p:last-child{margin-bottom:0}
+
+.raster-2{display:grid;grid-template-columns:1fr 1fr;gap:1.3rem}
+.raster-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+@media(max-width:820px){.raster-2,.raster-3{grid-template-columns:1fr}}
+
+/* ---- Buttons ------------------------------------------------------ */
+.btn{
+  display:inline-flex;align-items:center;gap:.55rem;font-family:'Archivo';font-weight:700;
+  font-size:.95rem;padding:.8rem 1.45rem;border-radius:11px;border:1px solid transparent;
+  cursor:pointer;background:var(--tinte);color:#fff;transition:.16s;letter-spacing:.005em;
+  box-shadow:0 1px 2px rgba(18,26,38,.18), 0 4px 14px rgba(18,26,38,.14);
+  position:relative;overflow:hidden;
+}
+.btn::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;
+  background:linear-gradient(90deg,var(--kupfer),var(--kupfer-gl));opacity:0;transition:.16s}
+.btn:hover{background:var(--tinte-2);text-decoration:none;transform:translateY(-1px);
+  box-shadow:0 2px 4px rgba(18,26,38,.2), 0 10px 24px rgba(18,26,38,.2)}
+.btn:hover::after{opacity:1}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn:disabled::after{opacity:0}
+.btn.sekundaer{background:var(--karte);color:var(--tinte);border-color:var(--gitter);
+  box-shadow:var(--schatten-s)}
+.btn.sekundaer:hover{background:var(--karte);border-color:var(--kupfer);color:var(--kupfer-d)}
+.btn.sekundaer::after{display:none}
+.btn.gross{font-size:1.05rem;padding:.98rem 1.9rem}
+.btn.gefahr{background:var(--warnung)}
+.btn.gefahr:hover{background:var(--warnung-l);color:var(--warnung)}
+.btn.erfolg{background:var(--messwert)}
+.btn.erfolg:hover{background:#19743f}
+
+/* ---- Marker / Badges --------------------------------------------- */
+.badge{
+  display:inline-flex;align-items:center;gap:.4rem;font-family:'JetBrains Mono';
+  font-size:.72rem;font-weight:600;padding:.3rem .65rem;border-radius:7px;letter-spacing:.03em;
+  border:1px solid transparent}
+.badge.blau{background:var(--spannung-l);color:var(--spannung-d);border-color:#cfd9fb}
+.badge.orange{background:var(--kupfer-l);color:var(--kupfer-d);border-color:#eccdb6}
+.badge.gruen{background:var(--messwert-l);color:var(--messwert);border-color:#c2e6cf}
+.badge.grau{background:var(--gitter-2);color:var(--stahl);border-color:var(--gitter)}
+
+/* ---- Formelboxen -------------------------------------------------- */
+.formel{
+  background:linear-gradient(180deg,var(--panel-2),var(--panel));color:#e9eef3;
+  border-radius:var(--radius-s);padding:1.15rem 1.35rem;margin:1.1rem 0;
+  font-family:'JetBrains Mono';font-size:1.02rem;border:1px solid var(--panel-rand);
+  border-left:3px solid var(--readout);overflow-x:auto;box-shadow:var(--schatten-s)}
+.formel .hl{color:var(--readout)}
+.formel .am{color:var(--readout-am)}
+.formel small{display:block;color:var(--stahl-2);font-size:.78rem;margin-top:.55rem;
+  font-family:'Inter';line-height:1.55}
+
+/* ---- Hinweisboxen ------------------------------------------------- */
+.box{border-radius:var(--radius-s);padding:1rem 1.2rem;margin:1.1rem 0;border:1px solid;
+  font-size:.93rem;display:flex;gap:.85rem;align-items:flex-start;line-height:1.55}
+.box .ic{font-size:1.2rem;flex:none;line-height:1.4}
+.box.info{background:var(--spannung-l);border-color:#cfd9fb;color:#1a368f}
+.box.warn{background:var(--warnung-l);border-color:#f0cbb8;color:#8c3618}
+.box.gut{background:var(--messwert-l);border-color:#bfe3cd;color:#155f33}
+.box strong{font-weight:700}
+
+/* ---- Tabellen ----------------------------------------------------- */
+table.tab{width:100%;border-collapse:collapse;font-size:.9rem;margin:.6rem 0;
+  border-radius:var(--radius-s);overflow:hidden;box-shadow:var(--schatten-s)}
+table.tab th{
+  background:var(--panel);color:#e3e9ef;font-family:'JetBrains Mono';font-weight:600;
+  font-size:.74rem;letter-spacing:.03em;padding:.65rem .75rem;text-align:left;
+  border-bottom:1px solid var(--panel-rand)}
+table.tab td{padding:.6rem .75rem;border-bottom:1px solid var(--gitter-2);
+  font-family:'JetBrains Mono';font-size:.86rem;background:var(--karte);color:var(--tinte-2)}
+table.tab tr:last-child td{border-bottom:none}
+table.tab tr:nth-child(even) td{background:#f7f9fb}
+table.tab td.txt{font-family:'Inter'}
+
+/* ---- Schritt-Liste (nummeriert) ---------------------------------- */
+.schritte{counter-reset:s;list-style:none;margin:1.1rem 0}
+.schritte li{position:relative;padding:0 0 1.4rem 3.4rem;counter-increment:s}
+.schritte li::before{
+  content:counter(s,decimal-leading-zero);position:absolute;left:0;top:-2px;
+  font-family:'JetBrains Mono';font-weight:700;font-size:.82rem;color:var(--kupfer-d);
+  background:var(--kupfer-l);border:1px solid #eccdb6;width:2.2rem;height:2.2rem;border-radius:10px;
+  display:grid;place-items:center}
+.schritte li::after{content:"";position:absolute;left:1.1rem;top:2.2rem;bottom:.2rem;
+  width:2px;background:var(--gitter)}
+.schritte li:last-child::after{display:none}
+.schritte li strong{display:block;font-family:'Archivo';font-weight:700;
+  font-size:1.04rem;margin-bottom:.2rem;color:var(--tinte)}
+.schritte li .txt{color:var(--tinte-2);font-size:.93rem}
+
+/* ---- Kennzahl-Kacheln (Instrument) ------------------------------- */
+.kpi{background:linear-gradient(180deg,var(--panel-2),var(--panel));
+  border:1px solid var(--panel-rand);border-radius:var(--radius-s);
+  padding:1.05rem 1.15rem;color:#dfe6ec;box-shadow:var(--schatten-s);position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--readout),transparent);opacity:.5}
+.kpi .lab{font-family:'JetBrains Mono';font-size:.68rem;letter-spacing:.09em;color:var(--stahl-2);
+  text-transform:uppercase}
+.kpi .val{font-family:'JetBrains Mono';font-weight:700;font-size:1.6rem;color:var(--readout);
+  margin-top:.3rem;line-height:1;text-shadow:0 0 18px rgba(56,214,255,.25)}
+.kpi .val small{font-size:.85rem;color:var(--stahl-2);font-weight:500}
+
+/* ---- Bilder ------------------------------------------------------- */
+figure.bild{margin:1.3rem 0;border:1px solid var(--gitter);border-radius:var(--radius-s);
+  overflow:hidden;background:var(--karte);box-shadow:var(--schatten-s)}
+figure.bild img{width:100%;display:block}
+figure.bild figcaption{font-family:'JetBrains Mono';font-size:.78rem;color:var(--stahl);
+  padding:.65rem .95rem;border-top:1px solid var(--gitter);background:#f7f9fb}
+
+/* ---- Fortschrittsbalken ------------------------------------------ */
+.progress{height:9px;background:var(--gitter-2);border-radius:99px;overflow:hidden;margin:.5rem 0}
+.progress > div{height:100%;background:linear-gradient(90deg,var(--kupfer),var(--kupfer-gl));
+  border-radius:99px;transition:width .35s ease}
+
+/* ---- Fuss --------------------------------------------------------- */
+.fuss{border-top:1px solid var(--gitter);background:var(--karte);margin-top:3.5rem}
+.fuss-inner{max-width:var(--maxw);margin:0 auto;padding:2.2rem 1.5rem;
+  display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+  font-family:'JetBrains Mono';font-size:.78rem;color:var(--stahl)}
+
+/* ---- Utility ------------------------------------------------------ */
+.zentriert{text-align:center}
+.btn-reihe{display:flex;gap:.85rem;flex-wrap:wrap;margin-top:1.3rem}
+.trenner{height:1px;background:var(--gitter);margin:1.5rem 0;border:none}
+.versteckt{display:none!important}
+.mt0{margin-top:0}.mb0{margin-bottom:0}
+
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}

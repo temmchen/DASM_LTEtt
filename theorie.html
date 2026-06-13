@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Theorie — KI Labor DASM</title>
+<style>
+/* =====================================================================
+   KI Labor DASM — Gemeinsames Stylesheet
+   Designsprache:  "Kupfer & Phosphor"
+   Helle Protokollseiten in kühlem Papier mit Kupfer-Akzent (Wicklung),
+   tiefschwarze Instrumenten-Panels mit leuchtenden Anzeigen.
+   ===================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+/* ---- Design-Token ------------------------------------------------- */
+:root{
+  /* Papier / Flächen */
+  --papier:    #eef1f6;   /* Seitenhintergrund, kühl */
+  --papier-2:  #e4e9f0;   /* abgesetzte Zonen */
+  --karte:     #ffffff;
+  --tinte:     #121a26;   /* Haupttext / Struktur (statt generischem Blau) */
+  --tinte-2:   #2a3442;
+  --stahl:     #586675;   /* Sekundärtext */
+  --stahl-2:   #8794a3;
+  --gitter:    #d7dde6;   /* Linien */
+  --gitter-2:  #e8ecf2;
+
+  /* Kupfer — Signaturfarbe (Motorwicklung) */
+  --kupfer:    #c06a37;
+  --kupfer-d:  #9c5328;
+  --kupfer-l:  #f7e9df;
+  --kupfer-gl: #e08a4d;
+
+  /* Spannungs-Blau — sparsam (Auswahl, Info, Links) */
+  --spannung:  #2a52e0;
+  --spannung-d:#1c3bb0;
+  --spannung-l:#e9edfc;
+
+  /* Status */
+  --warnung:   #cf5a2c;   /* Kipppunkt / Abzug (Kupfer-Familie) */
+  --warnung-l: #fbe7dd;
+  --messwert:  #1f8f4e;   /* korrekt / gut */
+  --messwert-l:#e3f3ea;
+  --violett:   #7c3aed;
+
+  /* Instrumenten-Panel (dunkel, anodisiert) */
+  --panel:     #0e141c;
+  --panel-2:   #161f29;
+  --panel-3:   #1d2833;
+  --panel-rand:#28333f;
+  --readout:   #38d6ff;   /* Phosphor-Cyan */
+  --readout-am:#ffb43c;   /* Bernstein */
+  --readout-gn:#46e487;   /* Grün */
+
+  --radius:    16px;
+  --radius-s:  10px;
+  --schatten-s:0 1px 2px rgba(18,26,38,.06), 0 1px 3px rgba(18,26,38,.04);
+  --schatten:  0 1px 2px rgba(18,26,38,.05), 0 6px 16px rgba(18,26,38,.07);
+  --schatten-m:0 2px 4px rgba(18,26,38,.06), 0 16px 40px rgba(18,26,38,.12);
+  --schatten-panel:0 1px 0 rgba(255,255,255,.04) inset, 0 18px 40px rgba(8,12,18,.45);
+  --maxw:      1180px;
+}
+
+/* ---- Reset / Basis ------------------------------------------------ */
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  background:var(--papier);
+  color:var(--tinte);
+  line-height:1.65;
+  font-size:16px;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  background-image:
+    radial-gradient(1200px 600px at 78% -8%, rgba(192,106,55,.06), transparent 60%),
+    radial-gradient(1000px 520px at 0% 0%, rgba(42,82,224,.05), transparent 55%);
+  background-attachment:fixed;
+}
+h1,h2,h3,h4{font-family:'Archivo',sans-serif;line-height:1.1;letter-spacing:-.015em;color:var(--tinte);font-weight:800}
+p{text-wrap:pretty}
+a{color:var(--spannung);text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:2px}
+.mono{font-family:'JetBrains Mono',monospace}
+strong,b{font-weight:700}
+:focus-visible{outline:2.5px solid var(--kupfer);outline-offset:2px;border-radius:4px}
+img{max-width:100%}
+
+/* ---- Kopfzeile / Navigation -------------------------------------- */
+.kopf{
+  position:sticky;top:0;z-index:50;
+  background:rgba(238,241,246,.82);
+  backdrop-filter:saturate(150%) blur(12px);
+  -webkit-backdrop-filter:saturate(150%) blur(12px);
+  border-bottom:1px solid var(--gitter);
+}
+.kopf-inner{
+  max-width:var(--maxw);margin:0 auto;padding:.75rem 1.5rem;
+  display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;
+}
+.logo{display:flex;align-items:center;gap:.75rem;font-family:'Archivo';font-weight:800;
+  font-size:1.06rem;letter-spacing:-.02em;color:var(--tinte)}
+.logo:hover{text-decoration:none}
+.logo .mark{
+  width:38px;height:38px;border-radius:10px;background:var(--panel);
+  display:grid;place-items:center;flex:none;position:relative;overflow:hidden;
+  box-shadow:0 2px 8px rgba(8,12,18,.35), 0 0 0 1px var(--panel-rand) inset;
+}
+.logo .mark::before{content:"";position:absolute;inset:0;
+  background:conic-gradient(from 0deg, transparent 0 270deg, var(--readout) 330deg, transparent 360deg);
+  animation:spin 3.2s linear infinite}
+.logo .mark::after{content:"";width:15px;height:15px;border-radius:50%;
+  background:var(--panel);border:2.5px solid var(--readout);z-index:1;
+  box-shadow:0 0 10px rgba(56,214,255,.5)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.logo small{display:block;font-family:'JetBrains Mono';font-weight:500;font-size:.6rem;
+  letter-spacing:.18em;color:var(--stahl);margin-top:2px}
+.nav{display:flex;gap:.25rem;margin-left:auto;flex-wrap:wrap}
+.nav a{
+  font-family:'JetBrains Mono';font-size:.78rem;font-weight:500;letter-spacing:.01em;
+  color:var(--stahl);padding:.5rem .8rem;border-radius:9px;white-space:nowrap;transition:.15s}
+.nav a:hover{background:var(--karte);color:var(--tinte);text-decoration:none;box-shadow:var(--schatten-s)}
+.nav a.aktiv{background:var(--tinte);color:#fff}
+.nav a.aktiv:hover{background:var(--tinte-2)}
+
+/* ---- Layout-Container -------------------------------------------- */
+.wrap{max-width:var(--maxw);margin:0 auto;padding:2.6rem 1.5rem 5rem}
+.eyebrow{
+  font-family:'JetBrains Mono';font-size:.72rem;font-weight:600;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--kupfer-d);margin-bottom:1rem;
+  display:flex;align-items:center;gap:.7rem}
+.eyebrow::before{content:"";width:28px;height:2px;background:var(--kupfer);border-radius:2px}
+
+/* ---- Karten ------------------------------------------------------- */
+.karte{
+  background:var(--karte);border:1px solid var(--gitter);border-radius:var(--radius);
+  box-shadow:var(--schatten-s);padding:1.7rem 1.8rem;margin-bottom:1.3rem;
+}
+.karte h2{font-size:1.5rem;margin-bottom:.6rem}
+.karte h3{font-size:1.15rem;margin:1.1rem 0 .5rem;font-weight:700}
+.karte h3:first-child{margin-top:0}
+.karte p{margin-bottom:.85rem;color:var(--tinte-2)}
+.karte p:last-child{margin-bottom:0}
+
+.raster-2{display:grid;grid-template-columns:1fr 1fr;gap:1.3rem}
+.raster-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+@media(max-width:820px){.raster-2,.raster-3{grid-template-columns:1fr}}
+
+/* ---- Buttons ------------------------------------------------------ */
+.btn{
+  display:inline-flex;align-items:center;gap:.55rem;font-family:'Archivo';font-weight:700;
+  font-size:.95rem;padding:.8rem 1.45rem;border-radius:11px;border:1px solid transparent;
+  cursor:pointer;background:var(--tinte);color:#fff;transition:.16s;letter-spacing:.005em;
+  box-shadow:0 1px 2px rgba(18,26,38,.18), 0 4px 14px rgba(18,26,38,.14);
+  position:relative;overflow:hidden;
+}
+.btn::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;
+  background:linear-gradient(90deg,var(--kupfer),var(--kupfer-gl));opacity:0;transition:.16s}
+.btn:hover{background:var(--tinte-2);text-decoration:none;transform:translateY(-1px);
+  box-shadow:0 2px 4px rgba(18,26,38,.2), 0 10px 24px rgba(18,26,38,.2)}
+.btn:hover::after{opacity:1}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn:disabled::after{opacity:0}
+.btn.sekundaer{background:var(--karte);color:var(--tinte);border-color:var(--gitter);
+  box-shadow:var(--schatten-s)}
+.btn.sekundaer:hover{background:var(--karte);border-color:var(--kupfer);color:var(--kupfer-d)}
+.btn.sekundaer::after{display:none}
+.btn.gross{font-size:1.05rem;padding:.98rem 1.9rem}
+.btn.gefahr{background:var(--warnung)}
+.btn.gefahr:hover{background:var(--warnung-l);color:var(--warnung)}
+.btn.erfolg{background:var(--messwert)}
+.btn.erfolg:hover{background:#19743f}
+
+/* ---- Marker / Badges --------------------------------------------- */
+.badge{
+  display:inline-flex;align-items:center;gap:.4rem;font-family:'JetBrains Mono';
+  font-size:.72rem;font-weight:600;padding:.3rem .65rem;border-radius:7px;letter-spacing:.03em;
+  border:1px solid transparent}
+.badge.blau{background:var(--spannung-l);color:var(--spannung-d);border-color:#cfd9fb}
+.badge.orange{background:var(--kupfer-l);color:var(--kupfer-d);border-color:#eccdb6}
+.badge.gruen{background:var(--messwert-l);color:var(--messwert);border-color:#c2e6cf}
+.badge.grau{background:var(--gitter-2);color:var(--stahl);border-color:var(--gitter)}
+
+/* ---- Formelboxen -------------------------------------------------- */
+.formel{
+  background:linear-gradient(180deg,var(--panel-2),var(--panel));color:#e9eef3;
+  border-radius:var(--radius-s);padding:1.15rem 1.35rem;margin:1.1rem 0;
+  font-family:'JetBrains Mono';font-size:1.02rem;border:1px solid var(--panel-rand);
+  border-left:3px solid var(--readout);overflow-x:auto;box-shadow:var(--schatten-s)}
+.formel .hl{color:var(--readout)}
+.formel .am{color:var(--readout-am)}
+.formel small{display:block;color:var(--stahl-2);font-size:.78rem;margin-top:.55rem;
+  font-family:'Inter';line-height:1.55}
+
+/* ---- Hinweisboxen ------------------------------------------------- */
+.box{border-radius:var(--radius-s);padding:1rem 1.2rem;margin:1.1rem 0;border:1px solid;
+  font-size:.93rem;display:flex;gap:.85rem;align-items:flex-start;line-height:1.55}
+.box .ic{font-size:1.2rem;flex:none;line-height:1.4}
+.box.info{background:var(--spannung-l);border-color:#cfd9fb;color:#1a368f}
+.box.warn{background:var(--warnung-l);border-color:#f0cbb8;color:#8c3618}
+.box.gut{background:var(--messwert-l);border-color:#bfe3cd;color:#155f33}
+.box strong{font-weight:700}
+
+/* ---- Tabellen ----------------------------------------------------- */
+table.tab{width:100%;border-collapse:collapse;font-size:.9rem;margin:.6rem 0;
+  border-radius:var(--radius-s);overflow:hidden;box-shadow:var(--schatten-s)}
+table.tab th{
+  background:var(--panel);color:#e3e9ef;font-family:'JetBrains Mono';font-weight:600;
+  font-size:.74rem;letter-spacing:.03em;padding:.65rem .75rem;text-align:left;
+  border-bottom:1px solid var(--panel-rand)}
+table.tab td{padding:.6rem .75rem;border-bottom:1px solid var(--gitter-2);
+  font-family:'JetBrains Mono';font-size:.86rem;background:var(--karte);color:var(--tinte-2)}
+table.tab tr:last-child td{border-bottom:none}
+table.tab tr:nth-child(even) td{background:#f7f9fb}
+table.tab td.txt{font-family:'Inter'}
+
+/* ---- Schritt-Liste (nummeriert) ---------------------------------- */
+.schritte{counter-reset:s;list-style:none;margin:1.1rem 0}
+.schritte li{position:relative;padding:0 0 1.4rem 3.4rem;counter-increment:s}
+.schritte li::before{
+  content:counter(s,decimal-leading-zero);position:absolute;left:0;top:-2px;
+  font-family:'JetBrains Mono';font-weight:700;font-size:.82rem;color:var(--kupfer-d);
+  background:var(--kupfer-l);border:1px solid #eccdb6;width:2.2rem;height:2.2rem;border-radius:10px;
+  display:grid;place-items:center}
+.schritte li::after{content:"";position:absolute;left:1.1rem;top:2.2rem;bottom:.2rem;
+  width:2px;background:var(--gitter)}
+.schritte li:last-child::after{display:none}
+.schritte li strong{display:block;font-family:'Archivo';font-weight:700;
+  font-size:1.04rem;margin-bottom:.2rem;color:var(--tinte)}
+.schritte li .txt{color:var(--tinte-2);font-size:.93rem}
+
+/* ---- Kennzahl-Kacheln (Instrument) ------------------------------- */
+.kpi{background:linear-gradient(180deg,var(--panel-2),var(--panel));
+  border:1px solid var(--panel-rand);border-radius:var(--radius-s);
+  padding:1.05rem 1.15rem;color:#dfe6ec;box-shadow:var(--schatten-s);position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--readout),transparent);opacity:.5}
+.kpi .lab{font-family:'JetBrains Mono';font-size:.68rem;letter-spacing:.09em;color:var(--stahl-2);
+  text-transform:uppercase}
+.kpi .val{font-family:'JetBrains Mono';font-weight:700;font-size:1.6rem;color:var(--readout);
+  margin-top:.3rem;line-height:1;text-shadow:0 0 18px rgba(56,214,255,.25)}
+.kpi .val small{font-size:.85rem;color:var(--stahl-2);font-weight:500}
+
+/* ---- Bilder ------------------------------------------------------- */
+figure.bild{margin:1.3rem 0;border:1px solid var(--gitter);border-radius:var(--radius-s);
+  overflow:hidden;background:var(--karte);box-shadow:var(--schatten-s)}
+figure.bild img{width:100%;display:block}
+figure.bild figcaption{font-family:'JetBrains Mono';font-size:.78rem;color:var(--stahl);
+  padding:.65rem .95rem;border-top:1px solid var(--gitter);background:#f7f9fb}
+
+/* ---- Fortschrittsbalken ------------------------------------------ */
+.progress{height:9px;background:var(--gitter-2);border-radius:99px;overflow:hidden;margin:.5rem 0}
+.progress > div{height:100%;background:linear-gradient(90deg,var(--kupfer),var(--kupfer-gl));
+  border-radius:99px;transition:width .35s ease}
+
+/* ---- Fuss --------------------------------------------------------- */
+.fuss{border-top:1px solid var(--gitter);background:var(--karte);margin-top:3.5rem}
+.fuss-inner{max-width:var(--maxw);margin:0 auto;padding:2.2rem 1.5rem;
+  display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+  font-family:'JetBrains Mono';font-size:.78rem;color:var(--stahl)}
+
+/* ---- Utility ------------------------------------------------------ */
+.zentriert{text-align:center}
+.btn-reihe{display:flex;gap:.85rem;flex-wrap:wrap;margin-top:1.3rem}
+.trenner{height:1px;background:var(--gitter);margin:1.5rem 0;border:none}
+.versteckt{display:none!important}
+.mt0{margin-top:0}.mb0{margin-bottom:0}
+
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+
+</style>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2310161d'/><circle cx='16' cy='16' r='7' fill='none' stroke='%2336d3ff' stroke-width='3'/></svg>">
+</head>
+<body>
+
+<header class="kopf">
+  <div class="kopf-inner">
+    <a href="index.html" class="logo">
+      <span class="mark"></span>
+      <span>KI&nbsp;Labor&nbsp;DASM<small>DREHSTROM-ASYNCHRONMASCHINE</small></span>
+    </a>
+    <nav class="nav">
+      <a href="index.html">Start</a>
+      <a href="theorie.html" class="aktiv">Theorie</a>
+      <a href="antestat.html">Antestat</a>
+      <a href="labor.html">Virtuelles Labor</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="eyebrow">Phase 01 · Grundlagen</div>
+  <h1 style="font-size:clamp(2rem,4vw,2.8rem);font-weight:900;margin-bottom:.7rem">Theorie der Drehstrom-Asynchronmaschine</h1>
+  <p style="font-size:1.08rem;color:#27313b;max-width:62ch;margin-bottom:1.6rem">
+  Alles, was du für den Antestat und den Versuch brauchst — vom Drehfeld über den Schlupf
+  bis zum Wirkungsgrad. Lies dieses Kapitel sorgfältig; die Antestat-Fragen werden hieraus gestellt.</p>
+
+  <!-- Inhaltsverzeichnis -->
+  <div class="karte" style="background:var(--panel);border-color:var(--panel-rand)">
+    <div class="eyebrow" style="color:var(--readout);margin-bottom:.8rem">Inhalt</div>
+    <div class="raster-3" style="gap:.6rem">
+      <a href="#aufbau" class="toc">1 · Aufbau & Wirkprinzip</a>
+      <a href="#drehfeld" class="toc">2 · Drehfeld & synchrone Drehzahl</a>
+      <a href="#schlupf" class="toc">3 · Der Schlupf</a>
+      <a href="#kennlinie" class="toc">4 · Drehmoment-Kennlinie</a>
+      <a href="#kloss" class="toc">5 · Kloss & Kippmoment</a>
+      <a href="#belastung" class="toc">6 · Belastungskennlinie</a>
+      <a href="#strom" class="toc">7 · Strom-Kennlinie</a>
+      <a href="#wirkungsgrad" class="toc">8 · Leistung & Wirkungsgrad</a>
+      <a href="#typenschild" class="toc">9 · Versuchsmaschine</a>
+    </div>
+  </div>
+
+  <!-- ============ 1 AUFBAU ============ -->
+  <section id="aufbau" class="karte">
+    <span class="kap-no">01</span>
+    <h2>Aufbau und Wirkprinzip</h2>
+    <p>Die Drehstrom-Asynchronmaschine (DASM) besteht aus zwei Hauptteilen:</p>
+    <div class="raster-2">
+      <div>
+        <h3>Ständer (Stator)</h3>
+        <p>Feststehender Teil mit drei räumlich um <strong>120°</strong> versetzten Wicklungs­strängen
+        (U, V, W). An Drehstrom angeschlossen erzeugen sie ein <strong>magnetisches Drehfeld</strong>.</p>
+      </div>
+      <div>
+        <h3>Läufer (Rotor)</h3>
+        <p>Drehbar gelagert. Zwei Bauformen:</p>
+        <ul class="ziel-liste" style="margin-top:.3rem">
+          <li><strong>Käfigläufer</strong> — kurzgeschlossene Leiterstäbe, robust, wartungsarm (Standard).</li>
+          <li><strong>Schleifringläufer</strong> — Wicklung mit Schleifringen, Anlaufwiderstände möglich.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="box info">
+      <span class="ic">⚙️</span>
+      <div><strong>Asynchron heißt:</strong> Der Läufer dreht <em>langsamer</em> als das Drehfeld.
+      Nur durch diese Relativbewegung werden im Läufer Spannungen induziert, es fließen Ströme,
+      und es entsteht ein Drehmoment. Würde der Läufer das Feld einholen (synchron laufen),
+      gäbe es keine Induktion und kein Moment.</div>
+    </div>
+  </section>
+
+  <!-- ============ 2 DREHFELD ============ -->
+  <section id="drehfeld" class="karte">
+    <span class="kap-no">02</span>
+    <h2>Drehfeld und synchrone Drehzahl</h2>
+    <p>Die drei zeitlich um 120° verschobenen Strangströme erzeugen ein resultierendes Magnetfeld,
+    das mit konstanter Geschwindigkeit umläuft — die <strong>synchrone Drehzahl</strong> $n_s$.
+    Sie hängt nur von der Netzfrequenz $f$ und der Polpaarzahl $p$ ab:</p>
+
+    <div class="formel">
+      <span class="hl">n<sub>s</sub></span> = ( <span class="am">f</span> · 60 ) / <span class="am">p</span>
+      &nbsp;&nbsp;[1/min]
+      <small>$f$ = Netzfrequenz in Hz · $p$ = Polpaarzahl · Ergebnis in Umdrehungen pro Minute</small>
+    </div>
+
+    <p>Für unser europäisches Netz ($f = 50$ Hz) ergeben sich feste synchrone Drehzahlen:</p>
+    <table class="tab">
+      <tr><th>Polpaarzahl p</th><th>Polzahl 2p</th><th>n<sub>s</sub> bei 50 Hz</th></tr>
+      <tr><td>1</td><td>2</td><td>3000 1/min</td></tr>
+      <tr><td>2</td><td>4</td><td>1500 1/min</td></tr>
+      <tr><td>3</td><td>6</td><td>1000 1/min</td></tr>
+      <tr><td>4</td><td>8</td><td>750 1/min</td></tr>
+    </table>
+    <div class="box gut"><span class="ic">✓</span>
+    <div>Unsere Versuchsmaschine hat <strong>p = 2</strong>, also $n_s = 1500$ 1/min.</div></div>
+  </section>
+
+  <!-- ============ 3 SCHLUPF ============ -->
+  <section id="schlupf" class="karte">
+    <span class="kap-no">03</span>
+    <h2>Der Schlupf <span class="mono" style="color:var(--spannung)">s</span></h2>
+    <p>Der Schlupf beschreibt, <strong>wie weit der Läufer hinter dem Drehfeld zurückbleibt</strong>.
+    Er ist die wichtigste Größe der Asynchronmaschine und wird als Verhältnis der Drehzahl­differenz
+    zur synchronen Drehzahl definiert:</p>
+
+    <div class="formel" style="font-size:1.15rem">
+      <span class="hl">s</span> = ( n<sub>s</sub> − <span class="am">n</span> ) / n<sub>s</sub>
+      &nbsp;&nbsp;bzw. in Prozent: &nbsp; s · 100&nbsp;%
+      <small>$n_s$ = synchrone Drehzahl (Feld) · $n$ = tatsächliche Läuferdrehzahl</small>
+    </div>
+
+    <p>Aus dem Schlupf lässt sich umgekehrt die Drehzahl berechnen:</p>
+    <div class="formel"><span class="am">n</span> = n<sub>s</sub> · ( 1 − <span class="hl">s</span> )</div>
+
+    <div class="raster-3" style="margin-top:1.2rem">
+      <div class="kpi"><span class="lab">Stillstand</span><span class="val">s = 1</span>
+        <span style="font-size:.78rem;color:var(--stahl-2);font-family:JetBrains Mono">n = 0 · Anlauf</span></div>
+      <div class="kpi"><span class="lab">Nennbetrieb</span><span class="val">s ≈ 0,05</span>
+        <span style="font-size:.78rem;color:var(--stahl-2);font-family:JetBrains Mono">3–6 % typisch</span></div>
+      <div class="kpi"><span class="lab">Synchron (ideal)</span><span class="val">s = 0</span>
+        <span style="font-size:.78rem;color:var(--stahl-2);font-family:JetBrains Mono">M = 0</span></div>
+    </div>
+
+    <div class="box info" style="margin-top:1.2rem"><span class="ic">🧮</span>
+    <div><strong>Rechenbeispiel.</strong> Läuft die Maschine ($n_s=1500$ 1/min) mit $n = 1425$ 1/min, so ist
+    $s = (1500-1425)/1500 = 75/1500 = 0{,}05 = 5\,\%$.</div></div>
+
+    <h3>Läuferfrequenz</h3>
+    <p>Die im Läufer induzierte Frequenz ist proportional zum Schlupf:</p>
+    <div class="formel">f<sub>2</sub> = <span class="hl">s</span> · <span class="am">f</span>
+      <small>Bei Stillstand ($s=1$): $f_2 = f$. Im Nennbetrieb nur wenige Hz.</small></div>
+  </section>
+
+  <!-- ============ 4 KENNLINIE ============ -->
+  <section id="kennlinie" class="karte">
+    <span class="kap-no">04</span>
+    <h2>Die Drehmoment-Drehzahl-Kennlinie</h2>
+    <p>Trägt man das von der Maschine erzeugte Drehmoment $M$ über der Drehzahl $n$ auf,
+    erhält man die <strong>charakteristische Kennlinie</strong>. Sie ist das zentrale Ziel
+    der Messreihe in diesem Versuch.</p>
+
+    <figure class="bild">
+      <img src="bilder/kennlinie_drehmoment.png" alt="Drehmoment-Drehzahl-Kennlinie der DASM">
+      <figcaption>Abb. 1 — M = f(n) mit Anlaufmoment, Kippmoment und Nennpunkt der Versuchsmaschine</figcaption>
+    </figure>
+
+    <p>Vier Punkte muss man kennen:</p>
+    <table class="tab">
+      <tr><th>Punkt</th><th>Bedeutung</th><th>Lage</th></tr>
+      <tr><td class="txt">Anlaufmoment $M_A$</td><td class="txt">Moment beim Einschalten</td><td>n = 0, s = 1</td></tr>
+      <tr><td class="txt">Sattelmoment $M_S$</td><td class="txt">lokales Minimum beim Hochlauf</td><td>kleines n</td></tr>
+      <tr><td class="txt">Kippmoment $M_K$</td><td class="txt">größtes erreichbares Moment</td><td>n = n<sub>K</sub>, s = s<sub>K</sub></td></tr>
+      <tr><td class="txt">Nennmoment $M_N$</td><td class="txt">Moment bei Nennlast</td><td>n = n<sub>N</sub>, s = s<sub>N</sub></td></tr>
+    </table>
+
+    <div class="box warn"><span class="ic">⚠️</span>
+    <div><strong>Stabil und instabil.</strong> Nur der Bereich rechts vom Kipppunkt
+    ($n_K < n < n_s$) ist <strong>stabil</strong>: Steigt die Last, sinkt die Drehzahl,
+    das Moment steigt nach und ein Gleichgewicht stellt sich ein. Links vom Kipppunkt ist die
+    Maschine <strong>instabil</strong> — überschreitet die Last das Kippmoment, „kippt" die
+    Maschine und bleibt stehen.</div></div>
+  </section>
+
+  <!-- ============ 5 KLOSS ============ -->
+  <section id="kloss" class="karte">
+    <span class="kap-no">05</span>
+    <h2>Kloss'sche Gleichung & Kippmoment</h2>
+    <p>Die <strong>Kloss'sche Gleichung</strong> beschreibt den Verlauf des Drehmoments in
+    Abhängigkeit vom Schlupf — bezogen auf das Kippmoment $M_K$ und den Kippschlupf $s_K$:</p>
+
+    <div class="formel" style="font-size:1.2rem;text-align:center">
+      <span class="am">M</span> / <span class="hl">M<sub>K</sub></span> = 2 / ( s/s<sub>K</sub> + s<sub>K</sub>/s )
+      <small style="text-align:left">Mit dieser Gleichung kannst du aus zwei gemessenen Wertepaaren
+      $(M,s)$ das Kippmoment $M_K$ und den Kippschlupf $s_K$ rechnerisch bestimmen.</small>
+    </div>
+
+    <figure class="bild">
+      <img src="bilder/kloss.png" alt="Kloss'sche Gleichung, bezogenes Moment über bezogenem Schlupf">
+      <figcaption>Abb. 2 — Symmetrischer Verlauf um den Kipppunkt s/s<sub>K</sub> = 1</figcaption>
+    </figure>
+
+    <p>Der Kippschlupf und das Kippmoment lassen sich auch aus den Ersatzschaltbild­größen berechnen:</p>
+    <div class="raster-2">
+      <div class="formel"><span class="hl">s<sub>K</sub></span> ≈ R<sub>2</sub>' / √( R<sub>1</sub>² + X² )
+        <small>Kippschlupf aus Wider­ständen und Streureaktanz X = X<sub>1</sub>+X<sub>2</sub>'</small></div>
+      <div class="formel"><span class="hl">M<sub>K</sub></span> = 3·U² / ( 2·ω<sub>s</sub>·(R<sub>1</sub>+√(R<sub>1</sub>²+X²)) )
+        <small>Kippmoment — unabhängig vom Läuferwiderstand R<sub>2</sub>'</small></div>
+    </div>
+
+    <div class="box gut"><span class="ic">💡</span>
+    <div><strong>Wichtige Eigenschaft.</strong> Das Kippmoment $M_K$ ist <em>unabhängig</em> vom
+    Läuferwiderstand $R_2'$ — der Läuferwiderstand verschiebt nur die <em>Lage</em> des Kipppunkts
+    (den Kippschlupf $s_K$), nicht seine <em>Höhe</em>. Bei Schleifring­läufern nutzt man das,
+    um über Anlaufwiderstände das hohe Moment in den Anlauf zu legen.</div></div>
+
+    <p>Das Verhältnis von Kipp- zu Nennmoment ist eine wichtige Katalog­angabe
+    (typisch 2,0 – 3,0). Für unsere Maschine gilt $M_K/M_N \approx 2{,}4$.</p>
+  </section>
+
+  <!-- ============ 6 BELASTUNG ============ -->
+  <section id="belastung" class="karte">
+    <span class="kap-no">06</span>
+    <h2>Belastungskennlinie n = f(M)</h2>
+    <p>Im Betrieb interessiert vor allem der stabile Ast. Trägt man die Drehzahl über dem
+    Belastungs­moment auf, erhält man die <strong>Belastungskennlinie</strong>. Sie zeigt das
+    typische „<strong>nebenschlussartige</strong>" Verhalten: Die Drehzahl sinkt mit steigender
+    Last nur wenig — die DASM hält ihre Drehzahl recht stabil.</p>
+
+    <figure class="bild">
+      <img src="bilder/kennlinie_belastung.png" alt="Belastungskennlinie n über M">
+      <figcaption>Abb. 3 — n = f(M) im stabilen Betriebsbereich von Leerlauf bis Kipppunkt</figcaption>
+    </figure>
+
+    <div class="box info"><span class="ic">📈</span>
+    <div>Vom <strong>Leerlauf</strong> ($M\approx0$, $n\approx n_s$) bis zum <strong>Nennpunkt</strong>
+    fällt die Drehzahl nur um wenige Prozent. Erst nahe dem Kipppunkt knickt die Kurve stark ab.
+    Genau diese Kurve nimmst du im Versuch Punkt für Punkt auf, indem du die Bremse schrittweise
+    anziehst und jeweils $n$ und $M$ abliest.</div></div>
+  </section>
+
+  <!-- ============ 7 STROM ============ -->
+  <section id="strom" class="karte">
+    <span class="kap-no">07</span>
+    <h2>Strom-Drehzahl-Kennlinie</h2>
+    <p>Auch der aufgenommene Ständerstrom $I_1$ ändert sich mit der Belastung. Beim Einschalten
+    fließt der hohe <strong>Anlaufstrom</strong> (ein Mehrfaches des Nennstroms), im Leerlauf
+    überwiegt der <strong>Magnetisierungs­strom</strong>.</p>
+
+    <figure class="bild">
+      <img src="bilder/kennlinie_strom.png" alt="Strom-Drehzahl-Kennlinie">
+      <figcaption>Abb. 4 — I₁ = f(n): hoher Anlaufstrom, niedriger Leerlaufstrom</figcaption>
+    </figure>
+
+    <div class="box warn"><span class="ic">⚡</span>
+    <div><strong>Anlaufstrom.</strong> Direkt eingeschaltet zieht die Maschine das 4- bis 7-fache
+    ihres Nennstroms. Deshalb verwendet man bei größeren Maschinen die <strong>Stern-Dreieck-
+    Anlaufschaltung</strong> oder Sanftanlauf, um den Einschaltstrom zu begrenzen.</div></div>
+  </section>
+
+  <!-- ============ 8 WIRKUNGSGRAD ============ -->
+  <section id="wirkungsgrad" class="karte">
+    <span class="kap-no">08</span>
+    <h2>Leistungsbilanz und Wirkungsgrad</h2>
+    <p>Die Maschine nimmt elektrische Leistung auf und gibt mechanische Leistung an der Welle ab.
+    Die Differenz sind die Verluste. Der <strong>Wirkungsgrad</strong> ist ihr Verhältnis:</p>
+
+    <div class="formel" style="font-size:1.2rem;text-align:center">
+      <span class="hl">η</span> = P<sub>ab</sub> / P<sub>zu</sub>
+      <small style="text-align:left">$P_{ab}$ = abgegebene mechanische Wellenleistung ·
+      $P_{zu}$ = aufgenommene elektrische Wirkleistung</small>
+    </div>
+
+    <h3>Aufgenommene elektrische Leistung</h3>
+    <div class="formel">P<sub>zu</sub> = √3 · <span class="am">U</span> · <span class="am">I</span> · cos&nbsp;φ
+      <small>U = verkettete Spannung (Außenleiter) · I = Außenleiterstrom · cos φ = Leistungsfaktor</small></div>
+
+    <h3>Abgegebene mechanische Leistung</h3>
+    <div class="formel">P<sub>ab</sub> = <span class="am">M</span> · ω = <span class="am">M</span> · 2π · <span class="am">n</span>/60
+      <small>M = Wellenmoment in Nm · n = Drehzahl in 1/min · ω = Winkelgeschwindigkeit in rad/s</small></div>
+
+    <figure class="bild">
+      <img src="bilder/kennlinie_wirkungsgrad.png" alt="Wirkungsgrad und Leistungsfaktor über Leistung">
+      <figcaption>Abb. 5 — η und cos φ über der abgegebenen Leistung. Bestes η nahe Nennlast.</figcaption>
+    </figure>
+
+    <h3>Wo die Leistung verloren geht</h3>
+    <p>Die aufgenommene Leistung verteilt sich auf Nutzleistung und vier Verlustarten:</p>
+    <figure class="bild">
+      <img src="bilder/leistungsbilanz.png" alt="Leistungsbilanz der DASM im Nennpunkt">
+      <figcaption>Abb. 6 — Leistungsfluss im Nennpunkt (η ≈ 85 %)</figcaption>
+    </figure>
+    <table class="tab">
+      <tr><th>Verlustart</th><th>Ursache</th><th>Abhängigkeit</th></tr>
+      <tr><td class="txt">Ständer-Kupferverluste P<sub>Cu1</sub></td><td class="txt">Wicklungswiderstand</td><td>~ I²</td></tr>
+      <tr><td class="txt">Läufer-Kupferverluste P<sub>Cu2</sub></td><td class="txt">Läuferstäbe</td><td>= s · P<sub>δ</sub></td></tr>
+      <tr><td class="txt">Eisenverluste P<sub>Fe</sub></td><td class="txt">Ummagnetisierung</td><td>≈ konstant</td></tr>
+      <tr><td class="txt">Reibung & Lüftung P<sub>Reib</sub></td><td class="txt">Lager, Luftwiderstand</td><td>~ n</td></tr>
+    </table>
+
+    <div class="box gut"><span class="ic">🔗</span>
+    <div><strong>Schlupf = Läuferverluste.</strong> Die Läufer-Kupferverluste sind direkt
+    $P_{Cu2} = s\cdot P_\delta$ (Schlupf mal Luftspaltleistung). Ein hoher Schlupf bedeutet
+    also unmittelbar hohe Läuferverluste und schlechteren Wirkungsgrad. Deshalb arbeitet die
+    Maschine im Nennbetrieb mit nur wenigen Prozent Schlupf.</div></div>
+  </section>
+
+  <!-- ============ 9 TYPENSCHILD ============ -->
+  <section id="typenschild" class="karte">
+    <span class="kap-no">09</span>
+    <h2>Daten der Versuchsmaschine</h2>
+    <p>Mit diesen Nennwerten arbeitest du im virtuellen Labor. Notiere sie für die Auswertung.</p>
+    <div class="typenschild">
+      <div class="ts-kopf">TYPENSCHILD · 3~ ASYNCHRONMOTOR · KÄFIGLÄUFER</div>
+      <div class="ts-grid">
+        <div><span>Nennleistung</span><b>P<sub>N</sub> = 1,5 kW</b></div>
+        <div><span>Nennspannung</span><b>U<sub>N</sub> = 400 V (Y)</b></div>
+        <div><span>Nennstrom</span><b>I<sub>N</sub> = 3,2 A</b></div>
+        <div><span>Leistungsfaktor</span><b>cos φ = 0,80</b></div>
+        <div><span>Nenndrehzahl</span><b>n<sub>N</sub> = 1420 1/min</b></div>
+        <div><span>Frequenz</span><b>f = 50 Hz</b></div>
+        <div><span>Polpaarzahl</span><b>p = 2</b></div>
+        <div><span>synchron</span><b>n<sub>s</sub> = 1500 1/min</b></div>
+        <div><span>Nennmoment</span><b>M<sub>N</sub> ≈ 10,1 Nm</b></div>
+        <div><span>Wirkungsgrad</span><b>η<sub>N</sub> ≈ 85 %</b></div>
+        <div><span>Kippmoment</span><b>M<sub>K</sub> ≈ 24,3 Nm</b></div>
+        <div><span>Kippschlupf</span><b>s<sub>K</sub> ≈ 0,29</b></div>
+      </div>
+    </div>
+    <div class="box info" style="margin-top:1.3rem"><span class="ic">→</span>
+    <div>Du hast die Theorie durch? Dann geht es weiter mit dem <a href="antestat.html">Antestat</a>.
+    Danach kannst du im <a href="labor.html">virtuellen Labor</a> die Messreihe aufnehmen.</div></div>
+  </section>
+
+  <div class="btn-reihe" style="justify-content:center;margin-top:1.5rem">
+    <a href="antestat.html" class="btn gross">Weiter zum Antestat →</a>
+  </div>
+</div>
+
+<footer class="fuss">
+  <div class="fuss-inner">
+    <span>KI&nbsp;Labor&nbsp;DASM · Theorie</span>
+    <span>Lycée technique d'Ettelbruck · Elektrotechnik</span>
+  </div>
+</footer>
+
+<script>
+window.MathJax={tex:{inlineMath:[['$','$']]},svg:{fontCache:'global'},
+  options:{skipHtmlTags:['script','noscript','style','textarea','pre','code']}};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+<style>
+.kap-no{position:absolute;top:1.2rem;right:1.6rem;font-family:'Archivo';font-weight:900;
+  font-size:2.4rem;color:var(--gitter-2);line-height:1}
+.karte{position:relative}
+.karte > h2{padding-right:3rem}
+.toc{display:block;font-family:'JetBrains Mono';font-size:.82rem;color:#cdd6df;
+  padding:.55rem .7rem;border:1px solid var(--panel-rand);border-radius:8px;background:var(--panel-2)}
+.toc:hover{text-decoration:none;border-color:var(--readout);color:var(--readout)}
+.typenschild{background:var(--panel);border:1px solid var(--panel-rand);border-radius:var(--radius-s);
+  overflow:hidden;margin-top:1rem}
+.ts-kopf{font-family:'JetBrains Mono';font-size:.72rem;letter-spacing:.12em;color:var(--readout);
+  padding:.7rem 1rem;border-bottom:1px solid var(--panel-rand);background:var(--panel-2)}
+.ts-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--panel-rand)}
+@media(max-width:680px){.ts-grid{grid-template-columns:repeat(2,1fr)}}
+.ts-grid > div{background:var(--panel);padding:.9rem 1rem;display:flex;flex-direction:column;gap:.25rem}
+.ts-grid span{font-family:'JetBrains Mono';font-size:.68rem;letter-spacing:.06em;color:var(--stahl-2);
+  text-transform:uppercase}
+.ts-grid b{font-family:'JetBrains Mono';font-size:1.05rem;color:#eaf1f6;font-weight:700}
+</style>
+</body>
+</html>
