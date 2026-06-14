@@ -1,5 +1,5 @@
 /* =====================================================================
-   KI Labor DASM — Virtuelles Drehstrom-Asynchronlabor
+   Labor DASM — Virtuelles Drehstrom-Asynchronlabor
    - Echtzeit-Physiksimulation (Gamma-Ersatzschaltbild, identisch zu den Bildern)
    - Belastung ueber virtuelle Bremse, Maschine sucht ihren Arbeitspunkt
    - Messpunkte aufnehmen -> Kennlinie M(n) live zeichnen
@@ -562,7 +562,7 @@ function laborPdf(){
   doc.setFillColor(16,22,29);doc.rect(0,0,W,28,'F');
   doc.setDrawColor(54,211,255);doc.setLineWidth(0.8);doc.circle(M+6,14,5,'S');
   doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(14);
-  doc.text('KI Labor DASM',M+16,12);
+  doc.text('Labor DASM',M+16,12);
   doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(150,167,178);
   doc.text('Messprotokoll - Belastungskennlinie & Kippmoment',M+16,18);
   doc.setFontSize(8);doc.text('Lycee technique d\'Ettelbruck',W-M,12,{align:'right'});
@@ -662,7 +662,7 @@ function laborPdf(){
   for(let p=1;p<=pages;p++){doc.setPage(p);
     doc.setDrawColor(212,218,224);doc.line(M,289,W-M,289);
     doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(140,150,160);
-    doc.text('KI Labor DASM - Messprotokoll',M,293);
+    doc.text('Labor DASM - Messprotokoll',M,293);
     doc.text(code,W/2,293,{align:'center'});
     doc.text(`Seite ${p}/${pages}`,W-M,293,{align:'right'});
   }

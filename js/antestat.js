@@ -1,5 +1,5 @@
 /* =====================================================================
-   KI Labor DASM — Antestat
+   Labor DASM — Antestat
    - zufaellige Fragenauswahl (jede.r bekommt einen anderen Satz)
    - parametrische Rechenaufgaben mit individuellen Zahlen
    - Antworten werden nach Bestaetigung gesperrt (nicht aenderbar)
@@ -541,7 +541,7 @@ function pdfErstellen(){
   doc.setFillColor(16,22,29); doc.rect(0,0,W,30,'F');
   doc.setFillColor(54,211,255); doc.circle(M+6,15,5,'S');
   doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(15);
-  doc.text('KI Labor DASM', M+16, 13);
+  doc.text('Labor DASM', M+16, 13);
   doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(150,167,178);
   doc.text('Antestat - Drehstrom-Asynchronmaschine', M+16, 19);
   doc.setFontSize(8);
@@ -629,7 +629,7 @@ function pdfErstellen(){
     doc.setPage(p);
     doc.setDrawColor(212,218,224); doc.line(M,289,W-M,289);
     doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(140,150,160);
-    doc.text('KI Labor DASM - Antestat', M, 293);
+    doc.text('Labor DASM - Antestat', M, 293);
     doc.text(`Satz ${State.setId} - ${State.pruefcode}`, W/2, 293, {align:'center'});
     doc.text(`Seite ${p}/${pages}`, W-M, 293, {align:'right'});
   }

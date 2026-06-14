@@ -1,4 +1,4 @@
-# KI Labor DASM — Virtuelles Labor zur Drehstrom-Asynchronmaschine
+# Labor DASM — Virtuelles Labor zur Drehstrom-Asynchronmaschine
 
 Ein vollständiges, browserbasiertes Schülerlabor zur **Drehstrom-Asynchronmaschine (DASM)**
 für den Elektrotechnik-Unterricht am *Lycée technique d'Ettelbruck*.
